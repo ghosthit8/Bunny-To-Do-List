@@ -1,0 +1,681 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Hand-in-Hand To-Do (Valentine Edition)</title>
+  <style>
+    :root{
+      --bg:#07080b;
+      --panel:#0c0f14;
+      --fg:#eafff2;
+      --muted:#86caa1;
+      --neon:#39ff88;
+      --border:#1b2a22;
+      --danger:#ff5a7a;
+      --shadow: 0 10px 35px rgba(0,0,0,.45);
+      --r:18px;
+      --cellH:52px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      background:
+        radial-gradient(1200px 700px at 10% 0%, rgba(57,255,136,.10), transparent 60%),
+        radial-gradient(900px 700px at 90% 10%, rgba(255,90,122,.08), transparent 55%),
+        var(--bg);
+      color:var(--fg);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    }
+    .scanlines:before{
+      content:"";
+      position:fixed; inset:0;
+      pointer-events:none;
+      background: repeating-linear-gradient(
+        to bottom,
+        rgba(255,255,255,.05) 0px,
+        rgba(255,255,255,.02) 1px,
+        rgba(0,0,0,0) 3px,
+        rgba(0,0,0,0) 6px
+      );
+      mix-blend-mode: overlay;
+      opacity:.25;
+    }
+    header{
+      position:sticky; top:0;
+      z-index:10;
+      padding:14px 14px 10px;
+      border-bottom:1px solid var(--border);
+      background: rgba(7,8,11,.82);
+      backdrop-filter: blur(10px);
+    }
+    .wrap{max-width:1200px;margin:0 auto}
+    .toprow{
+      display:flex; gap:12px; align-items:flex-start; justify-content:space-between;
+      flex-wrap:wrap;
+    }
+    h1{
+      margin:0;
+      font-size:18px;
+      letter-spacing:.6px;
+    }
+    .sub{
+      color:var(--muted);
+      font-size:13px;
+      margin-top:6px;
+    }
+    .controls{
+      display:flex; gap:10px; align-items:center;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+    .btn, select, input[type="text"]{
+      border:1px solid var(--border);
+      background: rgba(12,15,20,.9);
+      color:var(--fg);
+      border-radius:12px;
+      padding:10px 12px;
+      font-size:14px;
+      outline:none;
+      box-shadow: 0 0 0 rgba(0,0,0,0);
+      transition: transform .05s ease, border-color .2s ease;
+    }
+    .btn{cursor:pointer}
+    .btn:hover{border-color: rgba(57,255,136,.5)}
+    .btn:active{transform: translateY(1px)}
+    .btn.primary{
+      border-color: rgba(57,255,136,.55);
+      box-shadow: 0 0 0 2px rgba(57,255,136,.12) inset;
+    }
+    .btn.danger{
+      border-color: rgba(255,90,122,.55);
+      box-shadow: 0 0 0 2px rgba(255,90,122,.10) inset;
+    }
+    main{padding:14px}
+    .gridCard{
+      background: rgba(12,15,20,.75);
+      border:1px solid var(--border);
+      border-radius: var(--r);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    .metaBar{
+      display:flex; gap:10px; align-items:center; justify-content:space-between;
+      padding:12px 12px;
+      border-bottom:1px solid var(--border);
+      flex-wrap:wrap;
+    }
+    .metaLeft{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+    .pill{
+      font-size:12px;
+      color:var(--muted);
+      border:1px solid var(--border);
+      border-radius:999px;
+      padding:6px 10px;
+    }
+    .neon{color:var(--neon)}
+    .tableWrap{
+      overflow:auto;
+      max-height: calc(100vh - 220px);
+    }
+
+    table{
+      width:100%;
+      border-collapse:separate;
+      border-spacing:0;
+      min-width: 860px;
+    }
+    thead th{
+      position:sticky; top:0;
+      background: rgba(12,15,20,.92);
+      backdrop-filter: blur(10px);
+      z-index:2;
+      border-bottom:1px solid var(--border);
+      padding:12px 10px;
+      text-align:left;
+      font-size:13px;
+      color:var(--muted);
+      white-space:nowrap;
+    }
+    tbody td{
+      border-bottom:1px solid rgba(27,42,34,.7);
+      padding: 0 10px;
+      height: var(--cellH);
+      vertical-align:middle;
+      position:relative;
+    }
+    tbody tr:hover td{
+      background: rgba(57,255,136,.03);
+    }
+    .rowTitle{
+      display:flex; align-items:center; gap:10px;
+    }
+    .rowTitle input{
+      width:100%;
+      border:none;
+      background: transparent;
+      padding:10px 0;
+      border-radius:0;
+      color:var(--fg);
+      font-size:14px;
+    }
+    .rowTitle input::placeholder{color: rgba(134,202,161,.55)}
+    .check{
+      display:flex; align-items:center; gap:10px;
+      height: var(--cellH);
+    }
+    .check input[type="checkbox"]{
+      width:18px; height:18px;
+      accent-color: var(--neon);
+      cursor:pointer;
+    }
+    .cellDone{
+      opacity:.65;
+      text-decoration: line-through;
+      text-decoration-thickness: 2px;
+      text-decoration-color: rgba(57,255,136,.45);
+    }
+
+    /* Characters marker */
+    .marker{
+      position:absolute;
+      right:8px;
+      top:50%;
+      transform: translateY(-50%);
+      display:flex;
+      gap:6px;
+      align-items:center;
+      pointer-events:none;
+      filter: drop-shadow(0 6px 10px rgba(0,0,0,.6));
+    }
+    canvas.sprite{
+      width:28px; height:28px;
+      image-rendering: pixelated;
+      border-radius:8px;
+      border:1px solid rgba(57,255,136,.2);
+      background: rgba(0,0,0,.25);
+    }
+    .hand{
+      width:10px; height:10px;
+      border-radius:4px;
+      border:1px solid rgba(255,255,255,.18);
+      background: rgba(57,255,136,.25);
+      box-shadow: 0 0 0 2px rgba(57,255,136,.10) inset;
+    }
+
+    .footerBar{
+      display:flex; gap:10px; align-items:center; justify-content:space-between;
+      padding:12px;
+      border-top:1px solid var(--border);
+      flex-wrap:wrap;
+    }
+    .tiny{font-size:12px;color:var(--muted)}
+    .hint{color:rgba(234,255,242,.85)}
+    .kbd{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      border:1px solid var(--border);
+      padding:2px 6px;
+      border-radius:8px;
+      color:var(--neon);
+    }
+  </style>
+</head>
+
+<body class="scanlines">
+  <header>
+    <div class="wrap">
+      <div class="toprow">
+        <div>
+          <h1>Hand-in-Hand To-Do <span class="neon">♥</span></h1>
+          <div class="sub">Finish tasks → finish the day → we walk down together.</div>
+        </div>
+
+        <div class="controls">
+          <select id="mode">
+            <option value="week">Mon–Fri (weekly)</option>
+            <option value="day">One Day (times)</option>
+          </select>
+
+          <button class="btn primary" id="addRow">+ Add Row</button>
+          <button class="btn" id="addCol">+ Add Column</button>
+          <button class="btn danger" id="reset">Reset</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="wrap">
+      <div class="gridCard">
+        <div class="metaBar">
+          <div class="metaLeft">
+            <div class="pill">Progress: <span id="progressText" class="neon">0%</span></div>
+            <div class="pill">Finished columns: <span id="doneCols" class="neon">0</span></div>
+            <div class="pill">Our spot: <span class="hint">Column <span id="spotCol" class="neon">1</span>, Row <span id="spotRow" class="neon">1</span></span></div>
+          </div>
+          <div class="pill tiny">Tip: edit labels • unlimited rows • auto-saves</div>
+        </div>
+
+        <div class="tableWrap">
+          <table id="table">
+            <thead><tr id="headRow"></tr></thead>
+            <tbody id="body"></tbody>
+          </table>
+        </div>
+
+        <div class="footerBar">
+          <div class="tiny">
+            How “walking” works: when an entire column is completed, the characters move down one row.
+          </div>
+          <div class="tiny">
+            Quick add row: press <span class="kbd">Enter</span> while editing a task label.
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // ===== Storage =====
+    const KEY = "valentine_todo_v1";
+
+    // ===== Default data =====
+    const DEFAULT = {
+      mode: "week",
+      columns: ["Mon", "Tue", "Wed", "Thu", "Fri"],
+      rows: [
+        { label: "Sweet thing #1", cells: {} },
+        { label: "Sweet thing #2", cells: {} },
+        { label: "Sweet thing #3", cells: {} },
+        { label: "Sweet thing #4", cells: {} },
+        { label: "Sweet thing #5", cells: {} },
+      ],
+      // The "walk" position: we show marker in the active column at rowIndex.
+      // rowIndex advances when a column is fully done. colIndex advances when you manually change focus.
+      marker: { colIndex: 0, rowIndex: 0 }
+    };
+
+    function load(){
+      try{
+        const raw = localStorage.getItem(KEY);
+        if(!raw) return structuredClone(DEFAULT);
+        const data = JSON.parse(raw);
+        // basic shape guard
+        if(!data || !Array.isArray(data.columns) || !Array.isArray(data.rows)) return structuredClone(DEFAULT);
+        return data;
+      }catch(e){
+        return structuredClone(DEFAULT);
+      }
+    }
+
+    function save(){
+      localStorage.setItem(KEY, JSON.stringify(state));
+    }
+
+    let state = load();
+
+    // ===== DOM =====
+    const $mode = document.getElementById("mode");
+    const $addRow = document.getElementById("addRow");
+    const $addCol = document.getElementById("addCol");
+    const $reset = document.getElementById("reset");
+    const $headRow = document.getElementById("headRow");
+    const $body = document.getElementById("body");
+    const $progressText = document.getElementById("progressText");
+    const $doneCols = document.getElementById("doneCols");
+    const $spotCol = document.getElementById("spotCol");
+    const $spotRow = document.getElementById("spotRow");
+
+    // ===== Pixel sprite placeholders =====
+    // You can replace these later with sprites generated from photos.
+    // Each sprite is drawn on a tiny canvas so it stays "pixelated".
+    function drawSprite(canvas, palette){
+      const ctx = canvas.getContext("2d");
+      const W = 16, H = 16;
+      canvas.width = W; canvas.height = H;
+      ctx.clearRect(0,0,W,H);
+
+      // simple chibi-ish blob: hair/head/body
+      const px = (x,y,c)=>{ ctx.fillStyle=c; ctx.fillRect(x,y,1,1); };
+
+      // background sprinkle
+      px(1,1, palette.spark);
+      px(14,2, palette.spark);
+
+      // head
+      for(let y=2;y<=7;y++){
+        for(let x=5;x<=10;x++){
+          const edge = (x===5||x===10||y===2||y===7);
+          px(x,y, edge ? palette.outline : palette.skin);
+        }
+      }
+      // hair top
+      for(let x=5;x<=10;x++) px(x,2, palette.hair);
+      px(5,3,palette.hair); px(10,3,palette.hair);
+
+      // eyes
+      px(6,5,palette.eye); px(9,5,palette.eye);
+
+      // body
+      for(let y=8;y<=13;y++){
+        for(let x=6;x<=9;x++){
+          const edge = (x===6||x===9||y===8||y===13);
+          px(x,y, edge ? palette.outline : palette.shirt);
+        }
+      }
+
+      // arms
+      px(5,10,palette.skin); px(10,10,palette.skin);
+
+      // legs
+      px(7,14,palette.pants); px(8,14,palette.pants);
+      px(7,15,palette.shoe); px(8,15,palette.shoe);
+    }
+
+    function makeMarker(){
+      const marker = document.createElement("div");
+      marker.className = "marker";
+
+      const left = document.createElement("canvas");
+      left.className = "sprite";
+      drawSprite(left, {
+        outline:"#1b2a22",
+        hair:"#5bffb0",
+        skin:"#f2d2b6",
+        eye:"#071016",
+        shirt:"#39ff88",
+        pants:"#113525",
+        shoe:"#071016",
+        spark:"rgba(255,90,122,.8)"
+      });
+
+      const hand = document.createElement("div");
+      hand.className = "hand";
+
+      const right = document.createElement("canvas");
+      right.className = "sprite";
+      drawSprite(right, {
+        outline:"#1b2a22",
+        hair:"#ff5a7a",
+        skin:"#f2d2b6",
+        eye:"#071016",
+        shirt:"#ff5a7a",
+        pants:"#2a1120",
+        shoe:"#071016",
+        spark:"rgba(57,255,136,.8)"
+      });
+
+      marker.append(left, hand, right);
+      return marker;
+    }
+
+    // ===== Helpers =====
+    function colKey(ci){ return "c" + ci; }
+
+    function ensureRowCells(){
+      for(const row of state.rows){
+        if(!row.cells) row.cells = {};
+        for(let ci=0; ci<state.columns.length; ci++){
+          const k = colKey(ci);
+          if(typeof row.cells[k] !== "boolean") row.cells[k] = false;
+        }
+      }
+    }
+
+    function calcStats(){
+      const cols = state.columns.length;
+      const rows = state.rows.length;
+      const total = cols * rows;
+      let done = 0;
+
+      // done per column
+      const colDone = new Array(cols).fill(true);
+      for(let ri=0; ri<rows; ri++){
+        for(let ci=0; ci<cols; ci++){
+          const ok = !!state.rows[ri].cells[colKey(ci)];
+          if(ok) done++;
+          else colDone[ci] = false;
+        }
+      }
+
+      const doneCols = colDone.filter(Boolean).length;
+      const pct = total ? Math.round((done/total)*100) : 0;
+      return { pct, doneCols, colDone };
+    }
+
+    function normalizeMarker(){
+      const cols = state.columns.length;
+      const rows = state.rows.length;
+      state.marker.colIndex = Math.max(0, Math.min(cols-1, state.marker.colIndex || 0));
+      state.marker.rowIndex = Math.max(0, Math.min(rows-1, state.marker.rowIndex || 0));
+    }
+
+    // Walking rule:
+    // When ANY column becomes fully completed, we move marker down by 1 row (capped).
+    // But we only move once per newly-completed column.
+    // We'll track previously-finished columns by hashing into storage-lite memory.
+    function getDoneColHash(){
+      return state._doneColHash || "";
+    }
+    function setDoneColHash(s){
+      state._doneColHash = s;
+    }
+    function updateWalking(){
+      const { colDone } = calcStats();
+      const hash = colDone.map(v => v ? "1":"0").join("");
+      const prev = getDoneColHash();
+      if(prev && prev.length === hash.length){
+        // count newly completed columns
+        for(let i=0;i<hash.length;i++){
+          if(prev[i]==="0" && hash[i]==="1"){
+            // newly completed column -> walk down
+            state.marker.rowIndex = Math.min(state.rows.length-1, state.marker.rowIndex + 1);
+          }
+        }
+      }
+      setDoneColHash(hash);
+    }
+
+    // ===== Render =====
+    function render(){
+      ensureRowCells();
+      normalizeMarker();
+
+      // Mode + default labels for day mode
+      $mode.value = state.mode || "week";
+
+      // Header row
+      $headRow.innerHTML = "";
+      const th0 = document.createElement("th");
+      th0.textContent = (state.mode === "day") ? "Time / Item" : "Task";
+      $headRow.appendChild(th0);
+
+      state.columns.forEach((name, ci)=>{
+        const th = document.createElement("th");
+        const inp = document.createElement("input");
+        inp.type = "text";
+        inp.value = name;
+        inp.className = "btn";
+        inp.style.width = "160px";
+        inp.style.padding = "8px 10px";
+        inp.style.borderRadius = "12px";
+        inp.addEventListener("input", ()=>{
+          state.columns[ci] = inp.value || (state.mode==="day" ? `Slot ${ci+1}` : `Day ${ci+1}`);
+          save();
+        });
+        th.appendChild(inp);
+        $headRow.appendChild(th);
+      });
+
+      // Body rows
+      $body.innerHTML = "";
+      state.rows.forEach((row, ri)=>{
+        const tr = document.createElement("tr");
+
+        // label cell
+        const tdLabel = document.createElement("td");
+        const labelWrap = document.createElement("div");
+        labelWrap.className = "rowTitle";
+        const labelInp = document.createElement("input");
+        labelInp.type = "text";
+        labelInp.value = row.label || "";
+        labelInp.placeholder = (state.mode==="day") ? "Add a time + thing (ex: 6:30pm — movie)" : "Add a task";
+        labelInp.addEventListener("input", ()=>{
+          row.label = labelInp.value;
+          save();
+        });
+        labelInp.addEventListener("keydown", (e)=>{
+          if(e.key === "Enter"){
+            e.preventDefault();
+            addRow();
+            // focus the new row label next render
+            setTimeout(()=>{
+              const inputs = $body.querySelectorAll('tr:last-child td:first-child input');
+              if(inputs[0]) inputs[0].focus();
+            }, 0);
+          }
+        });
+        labelWrap.appendChild(labelInp);
+        tdLabel.appendChild(labelWrap);
+        tr.appendChild(tdLabel);
+
+        // check cells
+        state.columns.forEach((_, ci)=>{
+          const td = document.createElement("td");
+          const wrap = document.createElement("div");
+          wrap.className = "check";
+
+          const cb = document.createElement("input");
+          cb.type = "checkbox";
+          cb.checked = !!row.cells[colKey(ci)];
+
+          const txt = document.createElement("div");
+          txt.textContent = "";
+          txt.style.flex = "1";
+
+          const applyDoneStyle = ()=>{
+            const done = cb.checked;
+            if(done) td.classList.add("cellDone");
+            else td.classList.remove("cellDone");
+          };
+          applyDoneStyle();
+
+          cb.addEventListener("change", ()=>{
+            row.cells[colKey(ci)] = cb.checked;
+            updateWalking();
+            save();
+            render(); // to reposition marker + stats + styles
+          });
+
+          wrap.append(cb, txt);
+          td.appendChild(wrap);
+
+          // marker placement: in marker column at marker row
+          if(ci === state.marker.colIndex && ri === state.marker.rowIndex){
+            td.appendChild(makeMarker());
+          }
+
+          tr.appendChild(td);
+        });
+
+        $body.appendChild(tr);
+      });
+
+      // stats
+      const { pct, doneCols } = calcStats();
+      $progressText.textContent = pct + "%";
+      $doneCols.textContent = String(doneCols);
+      $spotCol.textContent = String((state.marker.colIndex||0) + 1);
+      $spotRow.textContent = String((state.marker.rowIndex||0) + 1);
+    }
+
+    // ===== Actions =====
+    function addRow(){
+      const cells = {};
+      for(let ci=0; ci<state.columns.length; ci++) cells[colKey(ci)] = false;
+      state.rows.push({ label:"", cells });
+      normalizeMarker();
+      save();
+      render();
+    }
+
+    function addColumn(){
+      const label = (state.mode==="day") ? `Slot ${state.columns.length+1}` : `Day ${state.columns.length+1}`;
+      state.columns.push(label);
+      for(const row of state.rows){
+        row.cells[colKey(state.columns.length-1)] = false;
+      }
+      normalizeMarker();
+      save();
+      render();
+    }
+
+    function setMode(mode){
+      state.mode = mode;
+
+      if(mode === "week"){
+        // if currently day-ish columns, reset to Mon-Fri by default
+        if(state.columns.length < 3 || state.columns.some(c=>/slot/i.test(c))){
+          state.columns = ["Mon","Tue","Wed","Thu","Fri"];
+          // resize row cell maps
+          for(const row of state.rows){
+            const next = {};
+            for(let ci=0; ci<state.columns.length; ci++) next[colKey(ci)] = !!row.cells[colKey(ci)];
+            row.cells = next;
+          }
+        }
+      } else {
+        // day mode: times/blocks (you can rename headers to actual times)
+        if(state.columns.length < 5) {
+          state.columns = ["Morning","Midday","Afternoon","Evening","Night"];
+          for(const row of state.rows){
+            const next = {};
+            for(let ci=0; ci<state.columns.length; ci++) next[colKey(ci)] = !!row.cells[colKey(ci)];
+            row.cells = next;
+          }
+        }
+      }
+
+      // marker reset to top-left for a clean feel
+      state.marker.colIndex = 0;
+      state.marker.rowIndex = 0;
+      setDoneColHash(""); // reset walking memory
+      save();
+      render();
+    }
+
+    // ===== Wire up =====
+    $addRow.addEventListener("click", addRow);
+    $addCol.addEventListener("click", addColumn);
+
+    $mode.addEventListener("change", ()=>{
+      setMode($mode.value);
+    });
+
+    $reset.addEventListener("click", ()=>{
+      if(!confirm("Reset the list? (This clears all checks and labels)")) return;
+      state = structuredClone(DEFAULT);
+      save();
+      render();
+    });
+
+    // Let user click column header area to "focus" marker column
+    document.addEventListener("click", (e)=>{
+      const th = e.target.closest("th");
+      if(!th) return;
+      const idx = Array.from(th.parentNode.children).indexOf(th) - 1; // -1 because first th is label
+      if(idx >= 0){
+        state.marker.colIndex = idx;
+        save();
+        render();
+      }
+    });
+
+    // First run
+    ensureRowCells();
+    updateWalking(); // keep consistent if storage had changes
+    save();
+    render();
+  </script>
+</body>
+</html>
