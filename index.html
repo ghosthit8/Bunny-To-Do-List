@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Hand-in-Hand To-Do ♥</title>
+  <style>
+    :root{
+      --bg:#07080b; --panel:#0c0f14; --fg:#eafff2; --muted:#86caa1;
+      --neon:#39ff88; --border:#1b2a22;
+      --r:16px;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+    header{
+      position:sticky; top:0; z-index:5;
+      padding:12px 14px;
+      background:rgba(7,8,11,.9);
+      backdrop-filter: blur(10px);
+      border-bottom:1px solid var(--border);
+    }
+    .wrap{max-width:920px;margin:0 auto}
+    h1{margin:0;font-size:16px;letter-spacing:.5px}
+    .sub{margin-top:6px;color:var(--muted);font-size:12px}
+    .bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+    .btn{
+      border:1px solid var(--border);
+      background:rgba(12,15,20,.9);
+      color:var(--fg);
+      border-radius:12px;
+      padding:9px 12px;
+      font-size:13px;
+      cursor:pointer;
+    }
+    .btn:hover{border-color:rgba(57,255,136,.5)}
+    .btn.primary{border-color:rgba(57,255,136,.6)}
+    .btn.danger{border-color:rgba(255,90,122,.6)}
+
+    main{padding:14px}
+    .card{
+      background:rgba(12,15,20,.78);
+      border:1px solid var(--border);
+      border-radius:var(--r);
+      overflow:hidden;
+    }
+
+    .head{
+      padding:10px 12px;
+      border-bottom:1px solid var(--border);
+      color:var(--muted);
+      font-size:12px;
+      display:grid;
+      grid-template-columns: 74px 1fr 74px;
+      gap:10px;
+      align-items:center;
+    }
+
+    .list{display:flex;flex-direction:column}
+    .row{
+      display:grid;
+      grid-template-columns: 74px 1fr 74px;
+      gap:10px;
+      padding:10px 12px;
+      align-items:center;
+      border-bottom:1px solid rgba(27,42,34,.7);
+      cursor:pointer;
+      user-select:none;
+    }
+    .row:last-child{border-bottom:none}
+    .row:hover{background:rgba(57,255,136,.03)}
+
+    .day{
+      color:var(--muted);
+      font-weight:700;
+      letter-spacing:.3px;
+      font-size:13px;
+    }
+
+    .task{
+      width:100%;
+      border:none;
+      outline:none;
+      background:transparent;
+      color:var(--fg);
+      font-size:14px;
+      padding:10px 8px;
+      border-radius:12px;
+      min-width:0;
+      user-select:text;
+    }
+    .task::placeholder{color:rgba(134,202,161,.55)}
+
+    /* completed look */
+    .done .task{
+      opacity:.65;
+      text-decoration: line-through;
+      text-decoration-thickness: 2px;
+      text-decoration-color: rgba(57,255,136,.45);
+    }
+    .done .day{opacity:.7}
+
+    /* marker */
+    .marker{
+      display:flex; gap:6px; align-items:center; justify-content:flex-end;
+      filter: drop-shadow(0 6px 10px rgba(0,0,0,.6));
+      pointer-events:auto;
+    }
+    canvas.sprite{
+      width:26px; height:26px;
+      image-rendering: pixelated;
+      border-radius:8px;
+      border:1px solid rgba(57,255,136,.18);
+      background: rgba(0,0,0,.25);
+    }
+    .hand{
+      width:10px; height:10px; border-radius:4px;
+      border:1px solid rgba(255,255,255,.18);
+      background: rgba(57,255,136,.22);
+    }
+
+    .hint{
+      text-align:right;
+      color:var(--muted);
+      font-size:12px;
+      white-space:nowrap;
+    }
+
+    .footer{
+      padding:10px 12px;
+      border-top:1px solid var(--border);
+      display:flex; gap:10px; flex-wrap:wrap; justify-content:space-between;
+      color:var(--muted); font-size:12px;
+    }
+
+    @media (max-width:560px){
+      .head, .row{grid-template-columns: 62px 1fr 68px}
+      canvas.sprite{width:22px;height:22px}
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <div class="bar">
+        <div>
+          <h1>Hand-in-Hand To-Do <span style="color:var(--neon)">♥</span></h1>
+          <div class="sub">Tap the next day to advance → previous day crosses out → we walk down.</div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <button class="btn primary" id="addRow">+ Row</button>
+          <button class="btn danger" id="reset">Reset</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="wrap">
+      <div class="card">
+        <div class="head">
+          <div>Day</div>
+          <div>Task</div>
+          <div style="text-align:right">Us</div>
+        </div>
+
+        <div class="list" id="list"></div>
+
+        <div class="footer">
+          <div>Auto-saves on this device.</div>
+          <div>Tip: tap a row to move us there. Tap the next day to “complete” the current one.</div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const KEY = "valentine_todo_advance_v1";
+    const DAYS = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+
+    const DEFAULT = {
+      rows: [
+        { day: "Mon", task: "Something sweet #1", done: false },
+        { day: "Tue", task: "Something sweet #2", done: false },
+        { day: "Wed", task: "Something sweet #3", done: false },
+        { day: "Thu", task: "Something sweet #4", done: false },
+        { day: "Fri", task: "Something sweet #5", done: false },
+      ],
+      markerRow: 0
+    };
+
+    let state = load();
+
+    function load(){
+      try{
+        const raw = localStorage.getItem(KEY);
+        if(!raw) return structuredClone(DEFAULT);
+        const data = JSON.parse(raw);
+        if(!data || !Array.isArray(data.rows)) return structuredClone(DEFAULT);
+        return data;
+      }catch(e){ return structuredClone(DEFAULT); }
+    }
+    function save(){ localStorage.setItem(KEY, JSON.stringify(state)); }
+
+    const list = document.getElementById("list");
+    const addRowBtn = document.getElementById("addRow");
+    const resetBtn = document.getElementById("reset");
+
+    function drawSprite(canvas, palette){
+      const ctx = canvas.getContext("2d");
+      const W=16,H=16;
+      canvas.width=W; canvas.height=H;
+      ctx.clearRect(0,0,W,H);
+      const px=(x,y,c)=>{ctx.fillStyle=c;ctx.fillRect(x,y,1,1);};
+
+      for(let y=2;y<=7;y++){
+        for(let x=5;x<=10;x++){
+          const edge = (x===5||x===10||y===2||y===7);
+          px(x,y, edge ? palette.outline : palette.skin);
+        }
+      }
+      for(let x=5;x<=10;x++) px(x,2,palette.hair);
+      px(5,3,palette.hair); px(10,3,palette.hair);
+      px(6,5,palette.eye); px(9,5,palette.eye);
+      for(let y=8;y<=13;y++){
+        for(let x=6;x<=9;x++){
+          const edge = (x===6||x===9||y===8||y===13);
+          px(x,y, edge ? palette.outline : palette.shirt);
+        }
+      }
+      px(5,10,palette.skin); px(10,10,palette.skin);
+      px(7,14,palette.pants); px(8,14,palette.pants);
+      px(7,15,palette.shoe); px(8,15,palette.shoe);
+    }
+
+    function makeMarker(){
+      const m = document.createElement("div");
+      m.className = "marker";
+
+      const a = document.createElement("canvas");
+      a.className = "sprite";
+      drawSprite(a, {
+        outline:"#1b2a22", hair:"#39ff88", skin:"#f2d2b6", eye:"#071016",
+        shirt:"#39ff88", pants:"#113525", shoe:"#071016"
+      });
+
+      const hand = document.createElement("div");
+      hand.className = "hand";
+
+      const b = document.createElement("canvas");
+      b.className = "sprite";
+      drawSprite(b, {
+        outline:"#1b2a22", hair:"#ff5a7a", skin:"#f2d2b6", eye:"#071016",
+        shirt:"#ff5a7a", pants:"#2a1120", shoe:"#071016"
+      });
+
+      m.append(a, hand, b);
+      return m;
+    }
+
+    function normalize(){
+      state.markerRow = Math.max(0, Math.min(state.rows.length-1, state.markerRow||0));
+      for(const r of state.rows){
+        if(typeof r.day !== "string") r.day = "";
+        if(typeof r.task !== "string") r.task = "";
+        r.done = !!r.done;
+      }
+    }
+
+    // Advance rule:
+    // When user clicks a DIFFERENT row that is BELOW current markerRow,
+    // we mark the current markerRow as done + move marker to clicked row.
+    // (Clicking above just jumps without marking done.)
+    function handleRowClick(targetIndex){
+      const cur = state.markerRow;
+
+      if(targetIndex > cur){
+        // complete current
+        state.rows[cur].done = true;
+        // move down
+        state.markerRow = targetIndex;
+      } else {
+        // just move (no auto complete)
+        state.markerRow = targetIndex;
+      }
+      save();
+      render();
+    }
+
+    function render(){
+      normalize();
+      list.innerHTML = "";
+
+      state.rows.forEach((r, ri)=>{
+        const row = document.createElement("div");
+        row.className = "row" + (r.done ? " done" : "");
+        row.addEventListener("click", ()=> handleRowClick(ri));
+
+        const day = document.createElement("div");
+        day.className = "day";
+        day.textContent = r.day || "";
+
+        const task = document.createElement("input");
+        task.className = "task";
+        task.type = "text";
+        task.value = r.task || "";
+        task.placeholder = "Type the task…";
+
+        // prevent row click when editing: stop click from bubbling
+        task.addEventListener("click", (e)=> e.stopPropagation());
+        task.addEventListener("input", ()=>{
+          r.task = task.value;
+          save();
+        });
+        task.addEventListener("keydown",(e)=>{
+          if(e.key==="Enter"){
+            e.preventDefault();
+            // Optional: Enter advances to next row if exists
+            const next = Math.min(state.rows.length-1, ri+1);
+            if(next !== ri){
+              state.rows[ri].done = true;
+              state.markerRow = next;
+              save();
+              render();
+            }
+          }
+        });
+
+        const right = document.createElement("div");
+        if(ri === state.markerRow){
+          const marker = makeMarker();
+          marker.title = "We are here";
+          marker.addEventListener("click", (e)=> e.stopPropagation());
+          right.appendChild(marker);
+        } else {
+          const hint = document.createElement("div");
+          hint.className = "hint";
+          hint.textContent = "";
+          right.appendChild(hint);
+        }
+
+        row.append(day, task, right);
+        list.appendChild(row);
+      });
+    }
+
+    function addRow(){
+      const idx = state.rows.length;
+      const day = DAYS[idx % DAYS.length] || `Day ${idx+1}`;
+      state.rows.push({ day, task:"", done:false });
+      normalize();
+      save();
+      render();
+    }
+
+    addRowBtn.addEventListener("click", addRow);
+
+    resetBtn.addEventListener("click", ()=>{
+      if(!confirm("Reset everything?")) return;
+      state = structuredClone(DEFAULT);
+      save();
+      render();
+    });
+
+    normalize();
+    save();
+    render();
+  </script>
+</body>
+</html>
