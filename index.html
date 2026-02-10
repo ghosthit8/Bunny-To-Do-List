@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Hand-in-Hand To-Do ♥</title>
 
-  <!-- Pixel-y fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
@@ -44,7 +43,6 @@
       position:relative;
     }
 
-    /* film grain + vignette */
     body::before{
       content:"";
       position:fixed; inset:0;
@@ -57,7 +55,6 @@
       z-index:1;
     }
 
-    /* scanlines */
     body::after{
       content:"";
       position:fixed; inset:0;
@@ -82,11 +79,7 @@
       backdrop-filter: blur(10px);
       border-bottom: var(--pixel) solid rgba(57,255,136,.18);
     }
-
-    .titleRow{
-      display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end; justify-content:space-between;
-    }
-
+    .titleRow{display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end; justify-content:space-between;}
     h1{
       margin:0;
       font-family:"Press Start 2P", system-ui;
@@ -106,7 +99,6 @@
       transform: translateY(-1px);
     }
     .heartBadge span{color:var(--pink); font-size:16px;}
-
     .sub{
       margin-top:8px;
       color:rgba(233,255,244,.75);
@@ -129,15 +121,6 @@
       position:relative;
       overflow:hidden;
     }
-    .btn::after{
-      content:"";
-      position:absolute; inset:0;
-      background: linear-gradient(90deg, transparent, rgba(255,255,255,.10), transparent);
-      transform: translateX(-120%);
-      transition: transform .35s ease;
-      pointer-events:none;
-    }
-    .btn:hover::after{transform: translateX(120%);}
     .btn.primary{ border-color: rgba(57,255,136,.55); }
     .btn.danger{ border-color: rgba(255,111,169,.55); }
 
@@ -151,7 +134,6 @@
       box-shadow: 0 22px 60px rgba(0,0,0,.55);
       position:relative;
     }
-
     .card::before{
       content:"";
       position:absolute; inset:0;
@@ -188,8 +170,6 @@
       padding:12px 12px;
       align-items:center;
       border-bottom: 1px solid rgba(36,50,43,.55);
-      cursor:pointer;
-      user-select:none;
       position:relative;
       background:
         linear-gradient(180deg, rgba(255,111,169,.03), transparent 55%),
@@ -197,18 +177,8 @@
     }
     .row:last-child{border-bottom:none}
 
-    /* IMPORTANT: inputs must be "above" everything on mobile */
-    .dayInput, .task{
-      position:relative;
-      z-index:5;
-      pointer-events:auto;
-      -webkit-user-select:text;
-      user-select:text;
-      -webkit-touch-callout: default;
-      touch-action: manipulation;
-    }
-
-    .dayInput{
+    /* LEFT DAY bubble: smaller + tighter */
+    .dayBtn{
       width:100%;
       border: var(--pixel) solid rgba(36,50,43,.55);
       outline:none;
@@ -220,9 +190,14 @@
       border-radius:14px;
       box-shadow: inset 0 0 0 1px rgba(255,111,169,.08);
       letter-spacing:1px;
-      text-transform:none;
+      cursor:pointer;
+      text-align:left;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
     }
 
+    /* TASK bubble: smaller text + longer area */
     .task{
       width:100%;
       border: var(--pixel) solid rgba(36,50,43,.55);
@@ -230,15 +205,28 @@
       background: rgba(8,10,15,.55);
       color:var(--fg);
       font-family:"VT323", monospace;
-      font-size:28px;
+      font-size:22px;           /* ✅ smaller text */
       padding:16px 14px;
-      border-radius:14px;
+      border-radius:16px;
       min-width:0;
       box-shadow: inset 0 0 0 1px rgba(255,111,169,.08);
-      line-height:1.05;
+      line-height:1.15;
+      min-height:92px;          /* ✅ taller bubble */
+      resize:none;
+
+      /* keep normal word wrapping */
+      word-break: normal;
+      overflow-wrap: break-word;
+    }
+    .task::placeholder{color:rgba(233,255,244,.42)}
+
+    textarea, input, button{
+      -webkit-appearance:none;
+      appearance:none;
+      touch-action: manipulation;
     }
 
-    .done .task, .done .dayInput{
+    .done .task, .done .dayBtn{
       opacity:.60;
       text-decoration: line-through;
       text-decoration-thickness: 3px;
@@ -269,7 +257,11 @@
       display:block;
     }
 
-    .hint{ text-align:right; color:rgba(233,255,244,.35); font-size:18px; white-space:nowrap; }
+    .usCell{
+      display:flex;
+      justify-content:flex-end;
+      align-items:center;
+    }
 
     .footer{
       position:relative; z-index:1;
@@ -315,11 +307,47 @@
       100%{ transform: translate3d(0, -20vh, 0) rotate(45deg); opacity:0; }
     }
 
+    /* ✅ MOBILE: Make task bubble LONG by moving sprites UNDER the row */
     @media (max-width:560px){
-      .head, .row{grid-template-columns: 106px 1fr 190px}
-      canvas.couple{width:164px;height:116px}
-      .dayInput{font-size:10px}
-      .task{font-size:26px}
+      .head{
+        grid-template-columns: 86px 1fr;
+        grid-template-areas: "day task" "us us";
+        gap:10px;
+      }
+      .head .h-day{grid-area:day}
+      .head .h-task{grid-area:task}
+      .head .h-us{
+        grid-area:us;
+        text-align:right;
+        opacity:.65;
+        padding-top:2px;
+      }
+
+      .row{
+        grid-template-columns: 86px 1fr;
+        grid-template-areas:
+          "day task"
+          "us  us";
+        gap:10px;
+        align-items:start;
+      }
+
+      .dayBtn{ grid-area:day; font-size:10px; padding:10px 10px; }
+      .task{ grid-area:task; font-size:21px; min-height:96px; }
+      .usCell{
+        grid-area:us;
+        justify-content:flex-end;
+        padding-top:8px;
+      }
+
+      canvas.couple{ width:140px; height:100px; }
+    }
+
+    /* extra-tight phones */
+    @media (max-width:380px){
+      .head, .row{ grid-template-columns: 80px 1fr; }
+      canvas.couple{ width:126px; height:90px; }
+      .task{ font-size:20px; }
     }
   </style>
 </head>
@@ -345,7 +373,7 @@
             <span style="color:var(--neon)">💚</span>
           </h1>
           <div class="sub">
-            Tap the <b>next day</b> to advance → previous day crosses out → <em>we walk down</em>.
+            Tap the <b>DAY pill</b> to advance → previous day crosses out → <em>we walk down</em>.
           </div>
         </div>
         <div class="btnRow">
@@ -360,16 +388,16 @@
     <div class="wrap">
       <div class="card">
         <div class="head">
-          <div>Day</div>
-          <div>Task</div>
-          <div>Us</div>
+          <div class="h-day">day</div>
+          <div class="h-task">task</div>
+          <div class="h-us">us</div>
         </div>
 
         <div class="list" id="list"></div>
 
         <div class="footer">
           <div>Auto-saves on this device. <b>♥</b></div>
-          <div><span>Tip:</span> tap a row to move us there. Tap the next day to “complete” the current one.</div>
+          <div><span>Tip:</span> type in the task bubble. Tap the day pill to move us down.</div>
         </div>
       </div>
     </div>
@@ -429,7 +457,6 @@
     };
 
     let state = load();
-    let isEditing = false; // HARD LOCK while typing (mobile-safe)
 
     function load(){
       try{
@@ -443,8 +470,6 @@
     function save(){ localStorage.setItem(KEY, JSON.stringify(state)); }
 
     const list = document.getElementById("list");
-    const addRowBtn = document.getElementById("addRow");
-    const resetBtn = document.getElementById("reset");
 
     function setupCanvas(canvas, W, H){
       canvas.width = W; canvas.height = H;
@@ -477,29 +502,15 @@
       rect(ctx, cx-9,  headTop+1, 18, 1,  p.skin);
       rect(ctx, cx-9,  headTop+18,18, 1,  p.skinShade);
 
-      px(ctx, cx-9, headTop+14, p.skinShade);
-      px(ctx, cx+8, headTop+14, p.skinShade);
-
       rect(ctx, cx-11, headTop-2, 22, 6, p.hair);
       rect(ctx, cx-11, headTop+4,  4, 12, p.hair);
       rect(ctx, cx+7,  headTop+4,  4, 12, p.hair);
 
       rect(ctx, cx-10, headTop+6, 20, 3, p.hair2);
-      px(ctx, cx-7, headTop+9, p.hair2);
-      px(ctx, cx-3, headTop+9, p.hair2);
-      px(ctx, cx+1, headTop+9, p.hair2);
-      px(ctx, cx+5, headTop+9, p.hair2);
 
       if(p === BUNNY){
         rect(ctx, cx-13, headTop+12, 7, 12, p.hair);
         rect(ctx, cx+6,  headTop+12, 7, 12, p.hair);
-        rect(ctx, cx-12, headTop+18, 5, 7,  p.hair2);
-        rect(ctx, cx+7,  headTop+18, 5, 7,  p.hair2);
-        px(ctx, cx-12, headTop+6, "rgba(57,255,136,.65)");
-        px(ctx, cx-11, headTop+6, "rgba(255,255,255,.45)");
-      } else {
-        rect(ctx, cx-13, headTop+7, 2, 7, p.hair);
-        rect(ctx, cx+11, headTop+7, 2, 7, p.hair);
       }
 
       rect(ctx, cx-8, headTop+11, 4, 5, p.eye);
@@ -508,33 +519,13 @@
       rect(ctx, cx+4, headTop+15, 4, 1, p.eye2);
       px(ctx, cx-8, headTop+11, "rgba(255,255,255,.95)");
       px(ctx, cx+4, headTop+11, "rgba(255,255,255,.95)");
-      px(ctx, cx-7, headTop+12, "rgba(255,255,255,.25)");
-      px(ctx, cx+5, headTop+12, "rgba(255,255,255,.25)");
-
-      px(ctx, cx-10, headTop+16, p.blush);
-      px(ctx, cx-9,  headTop+16, "rgba(255,143,176,.55)");
-      px(ctx, cx+9,  headTop+16, p.blush);
-      px(ctx, cx+8,  headTop+16, "rgba(255,143,176,.55)");
-
-      rect(ctx, cx-1, headTop+17, 2, 2, "#2a1a16");
-      px(ctx, cx, headTop+18, "#ff7da6");
-
-      if(p.glasses){
-        rect(ctx, cx-10, headTop+10, 9, 6, "rgba(170,210,255,.09)");
-        rect(ctx, cx+1,  headTop+10, 9, 6, "rgba(170,210,255,.09)");
-        outlineRect(ctx, cx-10, headTop+10, 9, 6, p.glasses);
-        outlineRect(ctx, cx+1,  headTop+10, 9, 6, p.glasses);
-        px(ctx, cx, headTop+13, p.glasses);
-      }
 
       const bodyY = headTop + 20;
       rect(ctx, cx-8, bodyY, 16, 11, p.hoodie);
       rect(ctx, cx-8, bodyY, 16, 3,  p.hoodie2);
-      rect(ctx, cx+4, bodyY+3, 4, 8, p.hoodieShade);
 
       if(p.accent){
         rect(ctx, cx-1, bodyY+5, 2, 2, p.accent);
-        px(ctx, cx+1, bodyY+6, "rgba(0,0,0,.25)");
       }
 
       const armY = bodyY + 3;
@@ -542,15 +533,6 @@
       rect(ctx, cx+8,  armY + (step=== 1?1:0), 3, 6, p.hoodie2);
       rect(ctx, cx-11, armY+6 + (step===-1?1:0), 3, 3, p.skin);
       rect(ctx, cx+8,  armY+6 + (step=== 1?1:0), 3, 3, p.skinShade);
-
-      const legY = bodyY + 11;
-      rect(ctx, cx-5 + (step===-1?-1:0), legY, 4, 7, p.pants);
-      rect(ctx, cx+1 + (step=== 1? 1:0), legY, 4, 7, p.pants2);
-
-      rect(ctx, cx-5 + (step===-1?-1:0), legY+7, 4, 2, p.shoe2);
-      rect(ctx, cx+1 + (step=== 1? 1:0), legY+7, 4, 2, p.shoe2);
-      rect(ctx, cx-5 + (step===-1?-1:0), legY+8, 4, 1, p.shoe);
-      rect(ctx, cx+1 + (step=== 1? 1:0), legY+8, 4, 1, p.shoe);
 
       outlineRect(ctx, cx-10, headTop+1, 20, 18, p.outline);
       outlineRect(ctx, cx-8,  bodyY,     16, 11, p.outline);
@@ -569,6 +551,7 @@
       drawPerson(ctx, 0, 0, YOU, frame);
       drawPerson(ctx, 56 - SHIFT, 0, BUNNY, frame);
 
+      // hand bridge
       const y = 54;
       const x = 54 - SHIFT;
       rect(ctx, x, y, 6, 3, "rgba(231,196,167,.92)");
@@ -576,13 +559,6 @@
       px(ctx, x+5, y, YOU.outline);
       px(ctx, x, y+2, YOU.outline);
       px(ctx, x+5, y+2, YOU.outline);
-
-      if((frame % 8) === 1){
-        px(ctx, (56 - SHIFT), 30, "rgba(255,111,169,.95)");
-        px(ctx, (57 - SHIFT), 30, "rgba(255,155,196,.85)");
-        px(ctx, (56 - SHIFT), 31, "rgba(255,155,196,.85)");
-        px(ctx, (57 - SHIFT), 31, "rgba(255,111,169,.95)");
-      }
     }
 
     function makeMarker(){
@@ -600,18 +576,12 @@
       if(!marker || !marker._canvas) return;
       marker.classList.remove("idle");
       const start = performance.now();
-
       function step(now){
         const t = now - start;
         const frame = Math.floor(t / 90) % 8;
         drawCouple(marker._canvas, frame);
-
-        if(t < duration){
-          requestAnimationFrame(step);
-        } else {
-          drawCouple(marker._canvas, 0);
-          marker.classList.add("idle");
-        }
+        if(t < duration) requestAnimationFrame(step);
+        else { drawCouple(marker._canvas, 0); marker.classList.add("idle"); }
       }
       requestAnimationFrame(step);
     }
@@ -625,11 +595,9 @@
       }
     }
 
-    function handleRowClick(targetIndex){
-      if(isEditing) return; // HARD LOCK while typing
+    function advanceTo(targetIndex){
       const cur = state.markerRow;
       let didAdvance = false;
-
       if(targetIndex > cur){
         state.rows[cur].done = true;
         state.markerRow = targetIndex;
@@ -637,32 +605,8 @@
       } else {
         state.markerRow = targetIndex;
       }
-
       save();
       render({ animate: didAdvance });
-    }
-
-    // Capture-phase blockers (mobile-safe)
-    function stopAll(e){
-      e.preventDefault();  // IMPORTANT on some Android browsers
-      e.stopPropagation();
-      if(e.stopImmediatePropagation) e.stopImmediatePropagation();
-    }
-
-    function attachInputGuards(input){
-      // If you *don’t* preventDefault on touch, some browsers treat it like a row tap.
-      input.addEventListener("touchstart", stopAll, { capture:true, passive:false });
-      input.addEventListener("touchend",   stopAll, { capture:true, passive:false });
-      input.addEventListener("pointerdown", stopAll, { capture:true });
-      input.addEventListener("pointerup",   stopAll, { capture:true });
-      input.addEventListener("mousedown", stopAll, { capture:true });
-      input.addEventListener("click", stopAll, { capture:true });
-
-      input.addEventListener("focus", ()=>{ isEditing = true; });
-      input.addEventListener("blur",  ()=>{
-        // small delay so taps don’t instantly advance right after typing
-        setTimeout(()=>{ isEditing = false; }, 120);
-      });
     }
 
     function render(opts = {}){
@@ -673,62 +617,33 @@
         const row = document.createElement("div");
         row.className = "row" + (r.done ? " done" : "");
 
-        // Support both click + touchend
-        row.addEventListener("click", ()=> handleRowClick(ri));
-        row.addEventListener("touchend", (e)=>{
-          if(isEditing) return;
-          handleRowClick(ri);
-        }, { passive:true });
+        const dayBtn = document.createElement("button");
+        dayBtn.className = "dayBtn";
+        dayBtn.type = "button";
+        dayBtn.textContent = r.day || "Day";
+        dayBtn.addEventListener("click", ()=> advanceTo(ri));
 
-        const day = document.createElement("input");
-        day.className = "dayInput";
-        day.type = "text";
-        day.value = r.day || "";
-        day.placeholder = "Day";
-        attachInputGuards(day);
-        day.addEventListener("input", ()=>{
-          r.day = day.value;
-          save();
-        });
-
-        const task = document.createElement("input");
+        const task = document.createElement("textarea");
         task.className = "task";
-        task.type = "text";
+        task.rows = 2;
         task.value = r.task || "";
         task.placeholder = "type something sweet…";
-        attachInputGuards(task);
         task.addEventListener("input", ()=>{
           r.task = task.value;
           save();
         });
 
-        task.addEventListener("keydown",(e)=>{
-          if(e.key==="Enter"){
-            e.preventDefault();
-            const next = Math.min(state.rows.length-1, ri+1);
-            if(next !== ri){
-              state.rows[ri].done = true;
-              state.markerRow = next;
-              save();
-              render({ animate: true });
-            }
-          }
-        });
-
         const right = document.createElement("div");
+        right.className = "usCell";
         if(ri === state.markerRow){
           const marker = makeMarker();
           marker.title = "We are here";
-          marker.addEventListener("click", (e)=> e.stopPropagation());
           right.appendChild(marker);
         } else {
-          const hint = document.createElement("div");
-          hint.className = "hint";
-          hint.textContent = "";
-          right.appendChild(hint);
+          right.appendChild(document.createElement("div"));
         }
 
-        row.append(day, task, right);
+        row.append(dayBtn, task, right);
         list.appendChild(row);
       });
 
@@ -747,9 +662,8 @@
       render();
     }
 
-    addRowBtn.addEventListener("click", addRow);
-
-    resetBtn.addEventListener("click", ()=>{
+    document.getElementById("addRow").addEventListener("click", addRow);
+    document.getElementById("reset").addEventListener("click", ()=>{
       if(!confirm("Reset everything?")) return;
       state = structuredClone(DEFAULT);
       save();
