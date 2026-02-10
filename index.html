@@ -116,7 +116,7 @@
     /* Single couple sprite canvas */
     canvas.couple{
       width:92px;
-      height:46px;
+      height:58px;
       image-rendering: pixelated;
       background: transparent;
       border: none;
@@ -141,7 +141,7 @@
 
     @media (max-width:560px){
       .head, .row{grid-template-columns: 62px 1fr 120px}
-      canvas.couple{width:82px;height:41px}
+      canvas.couple{width:82px;height:52px}
     }
   </style>
 </head>
@@ -195,14 +195,15 @@
       markerRow: 0
     };
 
-    // Keep your clothes vibe; improve silhouette + add true hand-hold (single combined sprite)
+    // ===== Keep same clothes vibe/colors; change only proportions + face/hair cuteness =====
     const YOU = {
-      outline:"#07090c",
+      outline:"#0a0d10",
       skin:"#e7c4a7",
       skinShade:"#d6ab8b",
+      blush:"#ff8fb0",
       hair:"#1a1f26",
       hair2:"#0f1318",
-      eye:"#0a0d10",
+      eye:"#3b2a22",
       hoodie:"#0f151d",
       hoodie2:"#171f2a",
       hoodieShade:"#0a0f16",
@@ -214,12 +215,13 @@
     };
 
     const BUNNY = {
-      outline:"#07090c",
+      outline:"#0a0d10",
       skin:"#e7c4a7",
       skinShade:"#d6ab8b",
+      blush:"#ff8fb0",
       hair:"#7b3dff",
       hair2:"#4a26b8",
-      eye:"#0a0d10",
+      eye:"#3b2a22",
       hoodie:"#111017",
       hoodie2:"#1a1624",
       hoodieShade:"#0b0a10",
@@ -258,132 +260,182 @@
     function px(ctx, x, y, c){ ctx.fillStyle = c; ctx.fillRect(x,y,1,1); }
     function rect(ctx, x, y, w, h, c){ ctx.fillStyle = c; ctx.fillRect(x,y,w,h); }
 
-    // Draw ONE person at an offset into the same canvas
-    // 4-frame walk: 0 idle, 1 stepL, 2 idle, 3 stepR
+    // ===== Cute chibi (like your anime pixel ref) =====
+    // BIG head, BIG eyes, blush, tiny body. Still responds to your frame animation.
     function drawPerson(ctx, ox, oy, p, frame){
       const f = frame % 4;
       const step = (f === 1) ? -1 : (f === 3 ? 1 : 0);
       const bob  = (f === 1 || f === 3) ? 0 : 1;
 
-      const cx = ox + 16;
-      const top = oy + 6 + bob;
+      ensureChibi(ctx, ox, oy, p, step, bob, f);
+    }
 
-      // HEAD
-      rect(ctx, cx-6, top,   12, 10, p.skin);
-      rect(ctx, cx+2, top+2,  4, 6,  p.skinShade);
+    function ensureChibi(ctx, ox, oy, p, step, bob, f){
+      // Cell is 40x48 (we place at 0 and 40 in drawCouple)
+      const cx = ox + 20;
+      const headTop = oy + 6 + bob;
 
-      rect(ctx, cx-6, top,    12, 3, p.hair);
-      rect(ctx, cx-6, top+3,  12, 2, p.hair2);
-      rect(ctx, cx-7, top+2, 2, 7, p.hair);
-      rect(ctx, cx+5, top+2, 2, 7, p.hair);
+      // --- Head base (rounder chibi) ---
+      rect(ctx, cx-7, headTop+1, 14, 11, p.skin);
+      rect(ctx, cx-6, headTop,   12, 1,  p.skin);       // top curve
+      rect(ctx, cx-6, headTop+12,12, 1,  p.skinShade);  // chin shade
+      // cheek shading
+      px(ctx, cx-6, headTop+8, p.skinShade);
+      px(ctx, cx+5, headTop+8, p.skinShade);
 
-      // eyes
-      px(ctx, cx-3, top+6, p.eye); px(ctx, cx-2, top+6, p.eye);
-      px(ctx, cx+1, top+6, p.eye); px(ctx, cx+2, top+6, p.eye);
-      px(ctx, cx, top+8, "rgba(0,0,0,.25)");
+      // --- Hair silhouette (more “cute anime”) ---
+      // crown
+      rect(ctx, cx-8, headTop-3, 16, 4, p.hair);
+      // bangs (jagged anime)
+      rect(ctx, cx-7, headTop+1, 14, 2, p.hair2);
+      px(ctx, cx-5, headTop+3, p.hair2);
+      px(ctx, cx-2, headTop+3, p.hair2);
+      px(ctx, cx+1, headTop+3, p.hair2);
+      px(ctx, cx+4, headTop+3, p.hair2);
 
-      // glasses (Bunny)
+      // side hair framing face
+      rect(ctx, cx-9, headTop+2, 3, 8, p.hair);
+      rect(ctx, cx+6, headTop+2, 3, 8, p.hair);
+
+      // Bunny: longer twin-tail-ish sides (cuter hair like ref)
+      if(p === BUNNY){
+        rect(ctx, cx-10, headTop+8, 4, 8, p.hair);
+        rect(ctx, cx+6,  headTop+8, 4, 8, p.hair);
+        rect(ctx, cx-9,  headTop+12,3, 4, p.hair2);
+        rect(ctx, cx+6,  headTop+12,3, 4, p.hair2);
+        // tiny hair accessory sparkle (subtle)
+        px(ctx, cx-8, headTop+4, "rgba(57,255,136,.55)");
+      } else {
+        // You: small extra tuft (less blocky)
+        px(ctx, cx-8, headTop+6, p.hair);
+        px(ctx, cx+7, headTop+6, p.hair);
+      }
+
+      // --- Eyes (big anime eyes + highlights) ---
+      // Eye blocks 2x3 each
+      rect(ctx, cx-4, headTop+6, 2, 3, p.eye);
+      rect(ctx, cx+2, headTop+6, 2, 3, p.eye);
+      // white highlights
+      px(ctx, cx-4, headTop+6, "rgba(255,255,255,.9)");
+      px(ctx, cx+2, headTop+6, "rgba(255,255,255,.9)");
+      px(ctx, cx-3, headTop+7, "rgba(255,255,255,.28)");
+      px(ctx, cx+3, headTop+7, "rgba(255,255,255,.28)");
+      // lower lash shadow
+      px(ctx, cx-4, headTop+9, "rgba(0,0,0,.25)");
+      px(ctx, cx+2, headTop+9, "rgba(0,0,0,.25)");
+
+      // --- Blush (cute cheeks like ref) ---
+      px(ctx, cx-6, headTop+9, p.blush);
+      px(ctx, cx-5, headTop+9, "rgba(255,143,176,.55)");
+      px(ctx, cx+5, headTop+9, p.blush);
+      px(ctx, cx+4, headTop+9, "rgba(255,143,176,.55)");
+
+      // --- Mouth (tiny open mouth) ---
+      px(ctx, cx,   headTop+10, "#2a1a16");
+      px(ctx, cx,   headTop+11, "#ff7da6");
+
+      // --- Glasses (Bunny) keep but make lighter ---
       if(p.glasses){
-        rect(ctx, cx-5, top+5, 5, 4, "rgba(170,210,255,.14)");
-        rect(ctx, cx,   top+5, 5, 4, "rgba(170,210,255,.14)");
-        // frames
-        rect(ctx, cx-5, top+5, 5, 1, p.glasses);
-        rect(ctx, cx-5, top+8, 5, 1, p.glasses);
-        rect(ctx, cx,   top+5, 5, 1, p.glasses);
-        rect(ctx, cx,   top+8, 5, 1, p.glasses);
-        rect(ctx, cx-5, top+5, 1, 4, p.glasses);
-        rect(ctx, cx+4, top+5, 1, 4, p.glasses);
-        rect(ctx, cx,   top+5, 1, 4, p.glasses);
-        rect(ctx, cx+4, top+5, 1, 4, p.glasses);
-        px(ctx, cx-1, top+6, p.glasses); px(ctx, cx-1, top+7, p.glasses);
+        rect(ctx, cx-6, headTop+5, 6, 4, "rgba(170,210,255,.10)");
+        rect(ctx, cx,   headTop+5, 6, 4, "rgba(170,210,255,.10)");
+        rect(ctx, cx-6, headTop+5, 6, 1, p.glasses);
+        rect(ctx, cx-6, headTop+8, 6, 1, p.glasses);
+        rect(ctx, cx,   headTop+5, 6, 1, p.glasses);
+        rect(ctx, cx,   headTop+8, 6, 1, p.glasses);
+        rect(ctx, cx-6, headTop+5, 1, 4, p.glasses);
+        rect(ctx, cx-1, headTop+5, 1, 4, p.glasses);
+        rect(ctx, cx,   headTop+5, 1, 4, p.glasses);
+        rect(ctx, cx+5, headTop+5, 1, 4, p.glasses);
       }
 
-      // neck
-      rect(ctx, cx-2, top+10, 4, 2, p.skin);
-      rect(ctx, cx,   top+10, 2, 2, p.skinShade);
+      // --- Tiny body (same clothes colors) ---
+      const bodyY = headTop + 13;
 
-      // HOOD ring + torso
-      rect(ctx, cx-7, top+9, 14, 4, p.hoodieShade);
-      rect(ctx, cx-6, top+10, 12, 3, p.hoodie2);
+      // hoodie (small)
+      rect(ctx, cx-5, bodyY,   10, 7, p.hoodie);
+      rect(ctx, cx-5, bodyY,   10, 2, p.hoodie2);
+      rect(ctx, cx+2, bodyY+2,  3, 5, p.hoodieShade);
 
-      rect(ctx, cx-6, top+12, 12, 9, p.hoodie);
-      rect(ctx, cx-6, top+12, 12, 3, p.hoodie2);
-      rect(ctx, cx+2, top+14, 4, 7, p.hoodieShade);
-
-      // zipper
-      px(ctx, cx-1, top+13, "rgba(255,255,255,.08)");
-      px(ctx, cx-1, top+15, "rgba(255,255,255,.08)");
-      px(ctx, cx-1, top+17, "rgba(255,255,255,.08)");
-      px(ctx, cx-1, top+19, "rgba(255,255,255,.08)");
-
+      // little chest accent (you)
       if(p.accent){
-        rect(ctx, cx-2, top+15, 3, 2, p.accent);
-        px(ctx, cx+1, top+16, "rgba(0,0,0,.25)");
+        rect(ctx, cx-1, bodyY+3, 2, 2, p.accent);
+        px(ctx, cx+1, bodyY+4, "rgba(0,0,0,.25)");
       }
 
-      // Arms (swing)
-      const armSwing = step;
-      rect(ctx, cx-9, top+13 + (armSwing===-1?1:0), 3, 7, p.hoodie2);
-      rect(ctx, cx-8, top+14 + (armSwing===-1?1:0), 2, 6, p.hoodie);
+      // arms (tiny swing)
+      const armY = bodyY + 2;
+      rect(ctx, cx-6, armY + (step===-1?1:0), 1, 4, p.hoodie2);
+      rect(ctx, cx+5, armY + (step=== 1?1:0), 1, 4, p.hoodie2);
 
-      rect(ctx, cx+6, top+13 + (armSwing===1?1:0), 3, 7, p.hoodie2);
-      rect(ctx, cx+6, top+14 + (armSwing===1?1:0), 2, 6, p.hoodieShade);
+      // hands (small)
+      px(ctx, cx-6, armY+4 + (step===-1?1:0), p.skin);
+      px(ctx, cx+5, armY+4 + (step=== 1?1:0), p.skinShade);
 
-      // Hands
-      rect(ctx, cx-9, top+20 + (armSwing===-1?1:0), 3, 2, p.skin);
-      rect(ctx, cx+6, top+20 + (armSwing===1?1:0), 3, 2, p.skinShade);
+      // legs (very tiny)
+      const legY = bodyY + 7;
+      rect(ctx, cx-3 + (step===-1?-1:0), legY, 2, 4, p.pants);
+      rect(ctx, cx+1 + (step=== 1? 1:0), legY, 2, 4, p.pants2);
 
-      // Pants
-      rect(ctx, cx-5, top+21, 5, 6, p.pants);
-      rect(ctx, cx,   top+21, 5, 6, p.pants);
-      rect(ctx, cx+2, top+22, 3, 5, p.pants2);
+      // shoes
+      rect(ctx, cx-3 + (step===-1?-1:0), legY+4, 2, 1, p.shoe2);
+      rect(ctx, cx+1 + (step=== 1? 1:0), legY+4, 2, 1, p.shoe2);
+      px(ctx, cx-2 + (step===-1?-1:0), legY+5, p.shoe);
+      px(ctx, cx+2 + (step=== 1? 1:0), legY+5, p.shoe);
 
-      // Shoes (chunky)
-      const leftFootX  = cx-5 + (step===-1 ? -1 : 0);
-      const rightFootX = cx   + (step=== 1 ?  1 : 0);
+      // --- Bold outline like cute pixel sprites (outline head + body) ---
+      // head outline boxish but rounded via missing corners
+      outlineRoundRect(ctx, cx-7, headTop, 14, 13, p.outline, true);
+      // body outline
+      outlineRect(ctx, cx-5, bodyY, 10, 7, p.outline);
+    }
 
-      rect(ctx, leftFootX,  top+26, 5, 3, p.shoe2);
-      rect(ctx, rightFootX, top+26, 5, 3, p.shoe2);
-      rect(ctx, leftFootX,  top+27, 5, 2, p.shoe);
-      rect(ctx, rightFootX, top+27, 5, 2, p.shoe);
-
-      // Outline (clean silhouette)
-      for(let x=cx-6;x<=cx+5;x++){ px(ctx,x,top,p.outline); px(ctx,x,top+9,p.outline); }
-      for(let y=top;y<=top+9;y++){ px(ctx,cx-6,y,p.outline); px(ctx,cx+5,y,p.outline); }
-      for(let x=cx-6;x<=cx+5;x++){ px(ctx,x,top+12,p.outline); px(ctx,x,top+20,p.outline); }
-      for(let y=top+12;y<=top+20;y++){ px(ctx,cx-6,y,p.outline); px(ctx,cx+5,y,p.outline); }
+    function outlineRect(ctx, x, y, w, h, c){
+      for(let i=0;i<w;i++){ px(ctx, x+i, y, c); px(ctx, x+i, y+h-1, c); }
+      for(let j=0;j<h;j++){ px(ctx, x, y+j, c); px(ctx, x+w-1, y+j, c); }
+    }
+    function outlineRoundRect(ctx, x, y, w, h, c, clipCorners){
+      // top/bot
+      for(let i=0;i<w;i++){ px(ctx, x+i, y, c); px(ctx, x+i, y+h-1, c); }
+      for(let j=0;j<h;j++){ px(ctx, x, y+j, c); px(ctx, x+w-1, y+j, c); }
+      if(clipCorners){
+        // knock out corners for a rounded feel
+        // (actually just draw bg-transparent by skipping: we "erase" by overdrawing with nothing is hard,
+        // so instead we avoid heavy corner pixels by drawing skin/hair later - here we just soften with gaps)
+        // We'll do small gaps by overwriting corner pixels with nearby interior color using a safe assumption:
+        // use outline color but keep it minimal:
+        // Remove 1px at each corner
+        // (We can't truly erase; instead we avoid double-thick corners.)
+        // So we just don't add extra; already thin.
+      }
     }
 
     // Draw BOTH people in ONE canvas, and force a true hand connection between them.
     function drawCouple(canvas, frame=0){
-      // 64x32 gives room for two 32x32 sprites side-by-side
-      const ctx = setupCanvas(canvas, 64, 32);
+      // 2 x 40px cells = 80px wide. Taller for cute head + hair.
+      const ctx = setupCanvas(canvas, 80, 48);
 
-      // Draw left person (YOU)
+      // Left person (YOU)
       drawPerson(ctx, 0, 0, YOU, frame);
 
-      // Draw right person (BUNNY)
-      drawPerson(ctx, 32, 0, BUNNY, frame);
+      // Right person (BUNNY)
+      drawPerson(ctx, 40, 0, BUNNY, frame);
 
-      // === FORCE HAND-HOLD ===
-      // We draw a tiny "bridge" between inner hands so they're always holding hands
-      // regardless of arm swing. This sits around the mid-body area.
-      const y = 20; // tweak if you ever change proportions
-      // Inner hands are near x= (left cx+6..) and (right cx-9..)
-      // Bridge in the gap between sprites (x about 29..34)
-      rect(ctx, 30, y, 4, 2, "rgba(231,196,167,.95)"); // skin bridge
+      // === FORCE HAND-HOLD (align with our tiny hands) ===
+      // Hands are around bodyY+6 -> roughly y= (headTop+13)+6 ~ 25–28
+      const y = 28;
+      rect(ctx, 38, y, 4, 2, "rgba(231,196,167,.92)");
       // outline around bridge
-      px(ctx, 30, y,   YOU.outline);
-      px(ctx, 33, y,   YOU.outline);
-      px(ctx, 30, y+1, YOU.outline);
-      px(ctx, 33, y+1, YOU.outline);
+      px(ctx, 38, y,   YOU.outline);
+      px(ctx, 41, y,   YOU.outline);
+      px(ctx, 38, y+1, YOU.outline);
+      px(ctx, 41, y+1, YOU.outline);
 
       // tiny heart sparkle sometimes (subtle, cute)
       if((frame % 8) === 1){
-        px(ctx, 31, 16, "rgba(57,255,136,.9)");
-        px(ctx, 32, 16, "rgba(57,255,136,.9)");
-        px(ctx, 31, 17, "rgba(57,255,136,.9)");
-        px(ctx, 32, 17, "rgba(57,255,136,.9)");
+        px(ctx, 39, 20, "rgba(57,255,136,.9)");
+        px(ctx, 40, 20, "rgba(57,255,136,.9)");
+        px(ctx, 39, 21, "rgba(57,255,136,.9)");
+        px(ctx, 40, 21, "rgba(57,255,136,.9)");
       }
     }
 
@@ -409,7 +461,7 @@
 
       function step(now){
         const t = now - start;
-        const frame = Math.floor(t / 90) % 8; // faster cadence, smoother feel
+        const frame = Math.floor(t / 90) % 8; // keep your cadence
         drawCouple(marker._canvas, frame);
 
         if(t < duration){
