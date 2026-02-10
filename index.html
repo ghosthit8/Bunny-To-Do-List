@@ -104,7 +104,16 @@
       display:flex; gap:6px; align-items:center; justify-content:flex-end;
       filter: drop-shadow(0 6px 10px rgba(0,0,0,.6));
       pointer-events:auto;
+      transform-origin: 50% 100%;
     }
+    .marker.idle{
+      animation: idleBob 1.6s ease-in-out infinite;
+    }
+    @keyframes idleBob{
+      0%,100%{transform:translateY(0)}
+      50%{transform:translateY(-1px)}
+    }
+
     canvas.sprite{
       width:26px; height:26px;
       image-rendering: pixelated;
@@ -188,6 +197,16 @@
       markerRow: 0
     };
 
+    // palettes (you can tweak these later to match your real looks)
+    const PALETTE_A = {
+      outline:"#1b2a22", hair:"#39ff88", skin:"#f2d2b6",
+      eye:"#071016", shirt:"#39ff88", pants:"#113525", shoe:"#071016"
+    };
+    const PALETTE_B = {
+      outline:"#1b2a22", hair:"#ff5a7a", skin:"#f2d2b6",
+      eye:"#071016", shirt:"#ff5a7a", pants:"#2a1120", shoe:"#071016"
+    };
+
     let state = load();
 
     function load(){
@@ -205,56 +224,108 @@
     const addRowBtn = document.getElementById("addRow");
     const resetBtn = document.getElementById("reset");
 
-    function drawSprite(canvas, palette){
+    // FRAME-BASED SPRITE (2-frame walking)
+    function drawSprite(canvas, palette, frame = 0){
       const ctx = canvas.getContext("2d");
       const W=16,H=16;
       canvas.width=W; canvas.height=H;
       ctx.clearRect(0,0,W,H);
       const px=(x,y,c)=>{ctx.fillStyle=c;ctx.fillRect(x,y,1,1);};
 
+      // head
       for(let y=2;y<=7;y++){
         for(let x=5;x<=10;x++){
           const edge = (x===5||x===10||y===2||y===7);
           px(x,y, edge ? palette.outline : palette.skin);
         }
       }
+
+      // hair
       for(let x=5;x<=10;x++) px(x,2,palette.hair);
       px(5,3,palette.hair); px(10,3,palette.hair);
+
+      // eyes
       px(6,5,palette.eye); px(9,5,palette.eye);
-      for(let y=8;y<=13;y++){
+
+      // body
+      for(let y=8;y<=12;y++){
         for(let x=6;x<=9;x++){
-          const edge = (x===6||x===9||y===8||y===13);
+          const edge = (x===6||x===9||y===8||y===12);
           px(x,y, edge ? palette.outline : palette.shirt);
         }
       }
-      px(5,10,palette.skin); px(10,10,palette.skin);
-      px(7,14,palette.pants); px(8,14,palette.pants);
-      px(7,15,palette.shoe); px(8,15,palette.shoe);
+
+      // arms (tiny swing)
+      const even = (frame % 2) === 0;
+      const armOffset = even ? 0 : 1;
+      px(5,10+armOffset,palette.skin);
+      px(10,10-armOffset,palette.skin);
+
+      // legs (walk cycle)
+      if(even){
+        px(7,14,palette.pants);
+        px(8,15,palette.pants);
+      } else {
+        px(8,14,palette.pants);
+        px(7,15,palette.pants);
+      }
+
+      // shoes
+      px(7,15,palette.shoe);
+      px(8,15,palette.shoe);
     }
 
     function makeMarker(){
       const m = document.createElement("div");
-      m.className = "marker";
+      m.className = "marker idle";
+      m.dataset.frame = "0";
 
       const a = document.createElement("canvas");
       a.className = "sprite";
-      drawSprite(a, {
-        outline:"#1b2a22", hair:"#39ff88", skin:"#f2d2b6", eye:"#071016",
-        shirt:"#39ff88", pants:"#113525", shoe:"#071016"
-      });
+      const b = document.createElement("canvas");
+      b.className = "sprite";
 
       const hand = document.createElement("div");
       hand.className = "hand";
 
-      const b = document.createElement("canvas");
-      b.className = "sprite";
-      drawSprite(b, {
-        outline:"#1b2a22", hair:"#ff5a7a", skin:"#f2d2b6", eye:"#071016",
-        shirt:"#ff5a7a", pants:"#2a1120", shoe:"#071016"
-      });
-
       m.append(a, hand, b);
+
+      // store references so we can animate after render
+      m._sprites = { a, b };
+
+      // initial draw
+      drawSprite(a, PALETTE_A, 0);
+      drawSprite(b, PALETTE_B, 0);
+
       return m;
+    }
+
+    function animateWalk(marker, duration = 420){
+      if(!marker || !marker._sprites) return;
+      marker.classList.remove("idle");
+
+      const start = performance.now();
+      let tick = 0;
+
+      function step(now){
+        const t = now - start;
+        tick++;
+
+        // advance frames quickly while "walking"
+        drawSprite(marker._sprites.a, PALETTE_A, tick);
+        drawSprite(marker._sprites.b, PALETTE_B, tick);
+
+        if(t < duration){
+          requestAnimationFrame(step);
+        } else {
+          // settle to frame 0 and return to idle bob
+          drawSprite(marker._sprites.a, PALETTE_A, 0);
+          drawSprite(marker._sprites.b, PALETTE_B, 0);
+          marker.classList.add("idle");
+        }
+      }
+
+      requestAnimationFrame(step);
     }
 
     function normalize(){
@@ -272,21 +343,21 @@
     // (Clicking above just jumps without marking done.)
     function handleRowClick(targetIndex){
       const cur = state.markerRow;
+      let didAdvance = false;
 
       if(targetIndex > cur){
-        // complete current
         state.rows[cur].done = true;
-        // move down
         state.markerRow = targetIndex;
+        didAdvance = true;
       } else {
-        // just move (no auto complete)
         state.markerRow = targetIndex;
       }
+
       save();
-      render();
+      render({ animate: didAdvance });
     }
 
-    function render(){
+    function render(opts = {}){
       normalize();
       list.innerHTML = "";
 
@@ -314,13 +385,12 @@
         task.addEventListener("keydown",(e)=>{
           if(e.key==="Enter"){
             e.preventDefault();
-            // Optional: Enter advances to next row if exists
             const next = Math.min(state.rows.length-1, ri+1);
             if(next !== ri){
               state.rows[ri].done = true;
               state.markerRow = next;
               save();
-              render();
+              render({ animate: true });
             }
           }
         });
@@ -341,6 +411,12 @@
         row.append(day, task, right);
         list.appendChild(row);
       });
+
+      // Animate after the marker exists in the DOM (only when advancing)
+      if(opts.animate){
+        const marker = document.querySelector(".marker");
+        if(marker) animateWalk(marker);
+      }
     }
 
     function addRow(){
