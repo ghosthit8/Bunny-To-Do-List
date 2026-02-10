@@ -50,7 +50,7 @@
       color:var(--muted);
       font-size:12px;
       display:grid;
-      grid-template-columns: 74px 1fr 74px;
+      grid-template-columns: 74px 1fr 96px;
       gap:10px;
       align-items:center;
     }
@@ -58,7 +58,7 @@
     .list{display:flex;flex-direction:column}
     .row{
       display:grid;
-      grid-template-columns: 74px 1fr 74px;
+      grid-template-columns: 74px 1fr 96px;
       gap:10px;
       padding:10px 12px;
       align-items:center;
@@ -101,7 +101,7 @@
 
     /* marker */
     .marker{
-      display:flex; gap:6px; align-items:center; justify-content:flex-end;
+      display:flex; gap:8px; align-items:center; justify-content:flex-end;
       filter: drop-shadow(0 6px 10px rgba(0,0,0,.6));
       pointer-events:auto;
       transform-origin: 50% 100%;
@@ -111,20 +111,23 @@
     }
     @keyframes idleBob{
       0%,100%{transform:translateY(0)}
-      50%{transform:translateY(-1px)}
+      50%{transform:translateY(-2px)}
     }
 
+    /* BIGGER sprites */
     canvas.sprite{
-      width:26px; height:26px;
+      width:44px; height:44px;
       image-rendering: pixelated;
-      border-radius:8px;
+      border-radius:12px;
       border:1px solid rgba(57,255,136,.18);
-      background: rgba(0,0,0,.25);
+      background: rgba(0,0,0,.22);
     }
+
     .hand{
-      width:10px; height:10px; border-radius:4px;
+      width:12px; height:12px; border-radius:6px;
       border:1px solid rgba(255,255,255,.18);
-      background: rgba(57,255,136,.22);
+      background: rgba(57,255,136,.20);
+      box-shadow: 0 0 0 2px rgba(0,0,0,.18) inset;
     }
 
     .hint{
@@ -142,8 +145,9 @@
     }
 
     @media (max-width:560px){
-      .head, .row{grid-template-columns: 62px 1fr 68px}
-      canvas.sprite{width:22px;height:22px}
+      .head, .row{grid-template-columns: 62px 1fr 96px}
+      canvas.sprite{width:38px;height:38px}
+      .hand{width:10px;height:10px}
     }
   </style>
 </head>
@@ -197,14 +201,33 @@
       markerRow: 0
     };
 
-    // palettes (you can tweak these later to match your real looks)
-    const PALETTE_A = {
-      outline:"#1b2a22", hair:"#39ff88", skin:"#f2d2b6",
-      eye:"#071016", shirt:"#39ff88", pants:"#113525", shoe:"#071016"
+    // "Us" palettes (original pixel art, inspired by classic overworld proportions)
+    // Person A = you (dark hoodie vibe)
+    const YOU = {
+      outline:"#0b0f12",
+      skin:"#e8c7aa",
+      hair:"#1a1f26",
+      hair2:"#0f1318",
+      eye:"#0a0d10",
+      hoodie:"#0f151d",
+      hoodie2:"#171f2a",
+      pants:"#0c1117",
+      shoe:"#0a0d10",
+      accent:"#39ff88" // little neon tag
     };
-    const PALETTE_B = {
-      outline:"#1b2a22", hair:"#ff5a7a", skin:"#f2d2b6",
-      eye:"#071016", shirt:"#ff5a7a", pants:"#2a1120", shoe:"#071016"
+
+    // Person B = Bunny (purple hair + glasses vibe)
+    const BUNNY = {
+      outline:"#0b0f12",
+      skin:"#e8c7aa",
+      hair:"#7b3dff",
+      hair2:"#4a26b8",
+      eye:"#0a0d10",
+      hoodie:"#111017",
+      hoodie2:"#1a1624",
+      pants:"#0e0e14",
+      shoe:"#0a0d10",
+      glasses:"#d7e8ff"
     };
 
     let state = load();
@@ -224,64 +247,113 @@
     const addRowBtn = document.getElementById("addRow");
     const resetBtn = document.getElementById("reset");
 
-    // FRAME-BASED SPRITE (2-frame walking)
-    function drawSprite(canvas, palette, frame = 0){
-      const ctx = canvas.getContext("2d");
-      const W=16,H=16;
-      canvas.width=W; canvas.height=H;
+    // --- Pixel helpers (32x32) ---
+    function setupCanvas(canvas){
+      const W = 32, H = 32;
+      canvas.width = W; canvas.height = H;
+      const ctx = canvas.getContext("2d", { alpha: true });
+      ctx.imageSmoothingEnabled = false;
       ctx.clearRect(0,0,W,H);
-      const px=(x,y,c)=>{ctx.fillStyle=c;ctx.fillRect(x,y,1,1);};
+      return ctx;
+    }
+    function px(ctx, x, y, c){ ctx.fillStyle = c; ctx.fillRect(x,y,1,1); }
+    function rect(ctx, x, y, w, h, c){ ctx.fillStyle = c; ctx.fillRect(x,y,w,h); }
+
+    // 4-frame walk: 0 idle, 1 stepL, 2 idle2, 3 stepR
+    function drawOverworld(canvas, p, frame = 0){
+      const ctx = setupCanvas(canvas);
+      const f = frame % 4;
+
+      // subtle bob (pokemon-ish)
+      const bob = (f === 1 || f === 3) ? 0 : 1;
+
+      // leg/arm swing
+      const legA = (f === 1) ? 1 : (f === 3 ? -1 : 0);
+      const legB = -legA;
+      const armA = -legA;
+      const armB = -armA;
+
+      // shadow
+      rect(ctx, 10, 28, 12, 2, "rgba(0,0,0,.25)");
+
+      // torso base position
+      const cx = 16, top = 6 + bob;
+
+      // hoodie / body (chunky overworld silhouette)
+      // body block
+      rect(ctx, cx-5, top+10, 10, 10, p.hoodie);
+      // hoodie highlight
+      rect(ctx, cx-5, top+10, 10, 3, p.hoodie2);
+
+      // arms (blocky, swing by 1px)
+      rect(ctx, cx-8, top+11+armA, 3, 8, p.hoodie2);
+      rect(ctx, cx+5, top+11+armB, 3, 8, p.hoodie2);
+
+      // hands (just a couple pixels)
+      rect(ctx, cx-8, top+18+armA, 3, 2, p.skin);
+      rect(ctx, cx+5, top+18+armB, 3, 2, p.skin);
+
+      // legs
+      rect(ctx, cx-4, top+20, 4, 7, p.pants);
+      rect(ctx, cx,   top+20, 4, 7, p.pants);
+
+      // stepping: shift feet a bit
+      rect(ctx, cx-4+legA, top+26, 4, 2, p.shoe);
+      rect(ctx, cx  +legB, top+26, 4, 2, p.shoe);
+
+      // neck
+      rect(ctx, cx-2, top+9, 4, 2, p.skin);
 
       // head
-      for(let y=2;y<=7;y++){
-        for(let x=5;x<=10;x++){
-          const edge = (x===5||x===10||y===2||y===7);
-          px(x,y, edge ? palette.outline : palette.skin);
-        }
-      }
+      rect(ctx, cx-6, top, 12, 10, p.skin);
 
-      // hair
-      for(let x=5;x<=10;x++) px(x,2,palette.hair);
-      px(5,3,palette.hair); px(10,3,palette.hair);
+      // hair cap
+      rect(ctx, cx-6, top, 12, 4, p.hair);
+      rect(ctx, cx-6, top+3, 12, 2, p.hair2);
+
+      // hair sides
+      rect(ctx, cx-7, top+2, 2, 6, p.hair);
+      rect(ctx, cx+5, top+2, 2, 6, p.hair);
 
       // eyes
-      px(6,5,palette.eye); px(9,5,palette.eye);
+      px(ctx, cx-3, top+6, p.eye);
+      px(ctx, cx+2, top+6, p.eye);
 
-      // body
-      for(let y=8;y<=12;y++){
-        for(let x=6;x<=9;x++){
-          const edge = (x===6||x===9||y===8||y===12);
-          px(x,y, edge ? palette.outline : palette.shirt);
-        }
+      // glasses for Bunny
+      if(p.glasses){
+        rect(ctx, cx-5, top+5, 5, 3, "rgba(0,0,0,.20)");
+        rect(ctx, cx+0, top+5, 5, 3, "rgba(0,0,0,.20)");
+        // frames
+        rect(ctx, cx-5, top+5, 5, 1, p.glasses);
+        rect(ctx, cx-5, top+7, 5, 1, p.glasses);
+        rect(ctx, cx+0, top+5, 5, 1, p.glasses);
+        rect(ctx, cx+0, top+7, 5, 1, p.glasses);
+        px(ctx, cx-1, top+6, p.glasses); // bridge
       }
 
-      // arms (tiny swing)
-      const even = (frame % 2) === 0;
-      const armOffset = even ? 0 : 1;
-      px(5,10+armOffset,palette.skin);
-      px(10,10-armOffset,palette.skin);
-
-      // legs (walk cycle)
-      if(even){
-        px(7,14,palette.pants);
-        px(8,15,palette.pants);
-      } else {
-        px(8,14,palette.pants);
-        px(7,15,palette.pants);
+      // tiny accent tag for you (neon)
+      if(p.accent){
+        rect(ctx, cx-1, top+13, 2, 2, p.accent);
       }
 
-      // shoes
-      px(7,15,palette.shoe);
-      px(8,15,palette.shoe);
+      // outline (quick pass around major silhouette)
+      // (cheap "toon" outline: sprinkle around edges)
+      // head outline
+      for(let x=cx-6;x<=cx+5;x++){ px(ctx,x,top,p.outline); px(ctx,x,top+9,p.outline); }
+      for(let y=top;y<=top+9;y++){ px(ctx,cx-6,y,p.outline); px(ctx,cx+5,y,p.outline); }
+
+      // body outline
+      for(let x=cx-5;x<=cx+4;x++){ px(ctx,x,top+10,p.outline); px(ctx,x,top+19,p.outline); }
+      for(let y=top+10;y<=top+19;y++){ px(ctx,cx-5,y,p.outline); px(ctx,cx+4,y,p.outline); }
     }
 
     function makeMarker(){
       const m = document.createElement("div");
       m.className = "marker idle";
-      m.dataset.frame = "0";
 
       const a = document.createElement("canvas");
       a.className = "sprite";
+
       const b = document.createElement("canvas");
       b.className = "sprite";
 
@@ -290,37 +362,35 @@
 
       m.append(a, hand, b);
 
-      // store references so we can animate after render
       m._sprites = { a, b };
+      m._frame = 0;
 
-      // initial draw
-      drawSprite(a, PALETTE_A, 0);
-      drawSprite(b, PALETTE_B, 0);
+      drawOverworld(a, YOU, 0);
+      drawOverworld(b, BUNNY, 0);
 
       return m;
     }
 
-    function animateWalk(marker, duration = 420){
+    function animateWalk(marker, duration = 650){
       if(!marker || !marker._sprites) return;
       marker.classList.remove("idle");
 
       const start = performance.now();
-      let tick = 0;
 
       function step(now){
         const t = now - start;
-        tick++;
 
-        // advance frames quickly while "walking"
-        drawSprite(marker._sprites.a, PALETTE_A, tick);
-        drawSprite(marker._sprites.b, PALETTE_B, tick);
+        // faster cadence for a more "sprite sheet" feel
+        const frame = Math.floor(t / 90) % 4;
+
+        drawOverworld(marker._sprites.a, YOU, frame);
+        drawOverworld(marker._sprites.b, BUNNY, frame);
 
         if(t < duration){
           requestAnimationFrame(step);
         } else {
-          // settle to frame 0 and return to idle bob
-          drawSprite(marker._sprites.a, PALETTE_A, 0);
-          drawSprite(marker._sprites.b, PALETTE_B, 0);
+          drawOverworld(marker._sprites.a, YOU, 0);
+          drawOverworld(marker._sprites.b, BUNNY, 0);
           marker.classList.add("idle");
         }
       }
@@ -337,10 +407,6 @@
       }
     }
 
-    // Advance rule:
-    // When user clicks a DIFFERENT row that is BELOW current markerRow,
-    // we mark the current markerRow as done + move marker to clicked row.
-    // (Clicking above just jumps without marking done.)
     function handleRowClick(targetIndex){
       const cur = state.markerRow;
       let didAdvance = false;
@@ -376,7 +442,6 @@
         task.value = r.task || "";
         task.placeholder = "Type the task…";
 
-        // prevent row click when editing: stop click from bubbling
         task.addEventListener("click", (e)=> e.stopPropagation());
         task.addEventListener("input", ()=>{
           r.task = task.value;
@@ -412,7 +477,6 @@
         list.appendChild(row);
       });
 
-      // Animate after the marker exists in the DOM (only when advancing)
       if(opts.animate){
         const marker = document.querySelector(".marker");
         if(marker) animateWalk(marker);
