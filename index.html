@@ -50,7 +50,7 @@
       color:var(--muted);
       font-size:12px;
       display:grid;
-      grid-template-columns: 74px 1fr 96px;
+      grid-template-columns: 74px 1fr 120px;
       gap:10px;
       align-items:center;
     }
@@ -58,7 +58,7 @@
     .list{display:flex;flex-direction:column}
     .row{
       display:grid;
-      grid-template-columns: 74px 1fr 96px;
+      grid-template-columns: 74px 1fr 120px;
       gap:10px;
       padding:10px 12px;
       align-items:center;
@@ -90,7 +90,6 @@
     }
     .task::placeholder{color:rgba(134,202,161,.55)}
 
-    /* completed look */
     .done .task{
       opacity:.65;
       text-decoration: line-through;
@@ -99,35 +98,31 @@
     }
     .done .day{opacity:.7}
 
-    /* marker */
+    /* Marker container (NO rectangles around sprites) */
     .marker{
-      display:flex; gap:8px; align-items:center; justify-content:flex-end;
-      filter: drop-shadow(0 6px 10px rgba(0,0,0,.6));
+      display:flex;
+      align-items:center;
+      justify-content:flex-end;
       pointer-events:auto;
       transform-origin: 50% 100%;
+      filter: drop-shadow(0 6px 10px rgba(0,0,0,.6));
     }
-    .marker.idle{
-      animation: idleBob 1.6s ease-in-out infinite;
-    }
+    .marker.idle{ animation: idleBob 1.6s ease-in-out infinite; }
     @keyframes idleBob{
       0%,100%{transform:translateY(0)}
       50%{transform:translateY(-2px)}
     }
 
-    /* BIGGER sprites */
-    canvas.sprite{
-      width:44px; height:44px;
+    /* Single couple sprite canvas */
+    canvas.couple{
+      width:92px;
+      height:46px;
       image-rendering: pixelated;
-      border-radius:12px;
-      border:1px solid rgba(57,255,136,.18);
-      background: rgba(0,0,0,.22);
-    }
-
-    .hand{
-      width:12px; height:12px; border-radius:6px;
-      border:1px solid rgba(255,255,255,.18);
-      background: rgba(57,255,136,.20);
-      box-shadow: 0 0 0 2px rgba(0,0,0,.18) inset;
+      background: transparent;
+      border: none;
+      border-radius: 0;
+      outline: none;
+      display:block;
     }
 
     .hint{
@@ -145,9 +140,8 @@
     }
 
     @media (max-width:560px){
-      .head, .row{grid-template-columns: 62px 1fr 96px}
-      canvas.sprite{width:38px;height:38px}
-      .hand{width:10px;height:10px}
+      .head, .row{grid-template-columns: 62px 1fr 120px}
+      canvas.couple{width:82px;height:41px}
     }
   </style>
 </head>
@@ -201,32 +195,38 @@
       markerRow: 0
     };
 
-    // "Us" palettes (original pixel art, inspired by classic overworld proportions)
-    // Person A = you (dark hoodie vibe)
+    // Keep your clothes vibe; improve silhouette + add true hand-hold (single combined sprite)
     const YOU = {
-      outline:"#0b0f12",
-      skin:"#e8c7aa",
+      outline:"#07090c",
+      skin:"#e7c4a7",
+      skinShade:"#d6ab8b",
       hair:"#1a1f26",
       hair2:"#0f1318",
       eye:"#0a0d10",
       hoodie:"#0f151d",
       hoodie2:"#171f2a",
+      hoodieShade:"#0a0f16",
       pants:"#0c1117",
+      pants2:"#121a24",
       shoe:"#0a0d10",
-      accent:"#39ff88" // little neon tag
+      shoe2:"#121821",
+      accent:"#39ff88"
     };
 
-    // Person B = Bunny (purple hair + glasses vibe)
     const BUNNY = {
-      outline:"#0b0f12",
-      skin:"#e8c7aa",
+      outline:"#07090c",
+      skin:"#e7c4a7",
+      skinShade:"#d6ab8b",
       hair:"#7b3dff",
       hair2:"#4a26b8",
       eye:"#0a0d10",
       hoodie:"#111017",
       hoodie2:"#1a1624",
+      hoodieShade:"#0b0a10",
       pants:"#0e0e14",
+      pants2:"#161625",
       shoe:"#0a0d10",
+      shoe2:"#171726",
       glasses:"#d7e8ff"
     };
 
@@ -247,9 +247,8 @@
     const addRowBtn = document.getElementById("addRow");
     const resetBtn = document.getElementById("reset");
 
-    // --- Pixel helpers (32x32) ---
-    function setupCanvas(canvas){
-      const W = 32, H = 32;
+    // ===== Pixel helpers =====
+    function setupCanvas(canvas, W, H){
       canvas.width = W; canvas.height = H;
       const ctx = canvas.getContext("2d", { alpha: true });
       ctx.imageSmoothingEnabled = false;
@@ -259,142 +258,167 @@
     function px(ctx, x, y, c){ ctx.fillStyle = c; ctx.fillRect(x,y,1,1); }
     function rect(ctx, x, y, w, h, c){ ctx.fillStyle = c; ctx.fillRect(x,y,w,h); }
 
-    // 4-frame walk: 0 idle, 1 stepL, 2 idle2, 3 stepR
-    function drawOverworld(canvas, p, frame = 0){
-      const ctx = setupCanvas(canvas);
+    // Draw ONE person at an offset into the same canvas
+    // 4-frame walk: 0 idle, 1 stepL, 2 idle, 3 stepR
+    function drawPerson(ctx, ox, oy, p, frame){
       const f = frame % 4;
+      const step = (f === 1) ? -1 : (f === 3 ? 1 : 0);
+      const bob  = (f === 1 || f === 3) ? 0 : 1;
 
-      // subtle bob (pokemon-ish)
-      const bob = (f === 1 || f === 3) ? 0 : 1;
+      const cx = ox + 16;
+      const top = oy + 6 + bob;
 
-      // leg/arm swing
-      const legA = (f === 1) ? 1 : (f === 3 ? -1 : 0);
-      const legB = -legA;
-      const armA = -legA;
-      const armB = -armA;
+      // HEAD
+      rect(ctx, cx-6, top,   12, 10, p.skin);
+      rect(ctx, cx+2, top+2,  4, 6,  p.skinShade);
 
-      // shadow
-      rect(ctx, 10, 28, 12, 2, "rgba(0,0,0,.25)");
-
-      // torso base position
-      const cx = 16, top = 6 + bob;
-
-      // hoodie / body (chunky overworld silhouette)
-      // body block
-      rect(ctx, cx-5, top+10, 10, 10, p.hoodie);
-      // hoodie highlight
-      rect(ctx, cx-5, top+10, 10, 3, p.hoodie2);
-
-      // arms (blocky, swing by 1px)
-      rect(ctx, cx-8, top+11+armA, 3, 8, p.hoodie2);
-      rect(ctx, cx+5, top+11+armB, 3, 8, p.hoodie2);
-
-      // hands (just a couple pixels)
-      rect(ctx, cx-8, top+18+armA, 3, 2, p.skin);
-      rect(ctx, cx+5, top+18+armB, 3, 2, p.skin);
-
-      // legs
-      rect(ctx, cx-4, top+20, 4, 7, p.pants);
-      rect(ctx, cx,   top+20, 4, 7, p.pants);
-
-      // stepping: shift feet a bit
-      rect(ctx, cx-4+legA, top+26, 4, 2, p.shoe);
-      rect(ctx, cx  +legB, top+26, 4, 2, p.shoe);
-
-      // neck
-      rect(ctx, cx-2, top+9, 4, 2, p.skin);
-
-      // head
-      rect(ctx, cx-6, top, 12, 10, p.skin);
-
-      // hair cap
-      rect(ctx, cx-6, top, 12, 4, p.hair);
-      rect(ctx, cx-6, top+3, 12, 2, p.hair2);
-
-      // hair sides
-      rect(ctx, cx-7, top+2, 2, 6, p.hair);
-      rect(ctx, cx+5, top+2, 2, 6, p.hair);
+      rect(ctx, cx-6, top,    12, 3, p.hair);
+      rect(ctx, cx-6, top+3,  12, 2, p.hair2);
+      rect(ctx, cx-7, top+2, 2, 7, p.hair);
+      rect(ctx, cx+5, top+2, 2, 7, p.hair);
 
       // eyes
-      px(ctx, cx-3, top+6, p.eye);
-      px(ctx, cx+2, top+6, p.eye);
+      px(ctx, cx-3, top+6, p.eye); px(ctx, cx-2, top+6, p.eye);
+      px(ctx, cx+1, top+6, p.eye); px(ctx, cx+2, top+6, p.eye);
+      px(ctx, cx, top+8, "rgba(0,0,0,.25)");
 
-      // glasses for Bunny
+      // glasses (Bunny)
       if(p.glasses){
-        rect(ctx, cx-5, top+5, 5, 3, "rgba(0,0,0,.20)");
-        rect(ctx, cx+0, top+5, 5, 3, "rgba(0,0,0,.20)");
+        rect(ctx, cx-5, top+5, 5, 4, "rgba(170,210,255,.14)");
+        rect(ctx, cx,   top+5, 5, 4, "rgba(170,210,255,.14)");
         // frames
         rect(ctx, cx-5, top+5, 5, 1, p.glasses);
-        rect(ctx, cx-5, top+7, 5, 1, p.glasses);
-        rect(ctx, cx+0, top+5, 5, 1, p.glasses);
-        rect(ctx, cx+0, top+7, 5, 1, p.glasses);
-        px(ctx, cx-1, top+6, p.glasses); // bridge
+        rect(ctx, cx-5, top+8, 5, 1, p.glasses);
+        rect(ctx, cx,   top+5, 5, 1, p.glasses);
+        rect(ctx, cx,   top+8, 5, 1, p.glasses);
+        rect(ctx, cx-5, top+5, 1, 4, p.glasses);
+        rect(ctx, cx+4, top+5, 1, 4, p.glasses);
+        rect(ctx, cx,   top+5, 1, 4, p.glasses);
+        rect(ctx, cx+4, top+5, 1, 4, p.glasses);
+        px(ctx, cx-1, top+6, p.glasses); px(ctx, cx-1, top+7, p.glasses);
       }
 
-      // tiny accent tag for you (neon)
+      // neck
+      rect(ctx, cx-2, top+10, 4, 2, p.skin);
+      rect(ctx, cx,   top+10, 2, 2, p.skinShade);
+
+      // HOOD ring + torso
+      rect(ctx, cx-7, top+9, 14, 4, p.hoodieShade);
+      rect(ctx, cx-6, top+10, 12, 3, p.hoodie2);
+
+      rect(ctx, cx-6, top+12, 12, 9, p.hoodie);
+      rect(ctx, cx-6, top+12, 12, 3, p.hoodie2);
+      rect(ctx, cx+2, top+14, 4, 7, p.hoodieShade);
+
+      // zipper
+      px(ctx, cx-1, top+13, "rgba(255,255,255,.08)");
+      px(ctx, cx-1, top+15, "rgba(255,255,255,.08)");
+      px(ctx, cx-1, top+17, "rgba(255,255,255,.08)");
+      px(ctx, cx-1, top+19, "rgba(255,255,255,.08)");
+
       if(p.accent){
-        rect(ctx, cx-1, top+13, 2, 2, p.accent);
+        rect(ctx, cx-2, top+15, 3, 2, p.accent);
+        px(ctx, cx+1, top+16, "rgba(0,0,0,.25)");
       }
 
-      // outline (quick pass around major silhouette)
-      // (cheap "toon" outline: sprinkle around edges)
-      // head outline
+      // Arms (swing)
+      const armSwing = step;
+      rect(ctx, cx-9, top+13 + (armSwing===-1?1:0), 3, 7, p.hoodie2);
+      rect(ctx, cx-8, top+14 + (armSwing===-1?1:0), 2, 6, p.hoodie);
+
+      rect(ctx, cx+6, top+13 + (armSwing===1?1:0), 3, 7, p.hoodie2);
+      rect(ctx, cx+6, top+14 + (armSwing===1?1:0), 2, 6, p.hoodieShade);
+
+      // Hands
+      rect(ctx, cx-9, top+20 + (armSwing===-1?1:0), 3, 2, p.skin);
+      rect(ctx, cx+6, top+20 + (armSwing===1?1:0), 3, 2, p.skinShade);
+
+      // Pants
+      rect(ctx, cx-5, top+21, 5, 6, p.pants);
+      rect(ctx, cx,   top+21, 5, 6, p.pants);
+      rect(ctx, cx+2, top+22, 3, 5, p.pants2);
+
+      // Shoes (chunky)
+      const leftFootX  = cx-5 + (step===-1 ? -1 : 0);
+      const rightFootX = cx   + (step=== 1 ?  1 : 0);
+
+      rect(ctx, leftFootX,  top+26, 5, 3, p.shoe2);
+      rect(ctx, rightFootX, top+26, 5, 3, p.shoe2);
+      rect(ctx, leftFootX,  top+27, 5, 2, p.shoe);
+      rect(ctx, rightFootX, top+27, 5, 2, p.shoe);
+
+      // Outline (clean silhouette)
       for(let x=cx-6;x<=cx+5;x++){ px(ctx,x,top,p.outline); px(ctx,x,top+9,p.outline); }
       for(let y=top;y<=top+9;y++){ px(ctx,cx-6,y,p.outline); px(ctx,cx+5,y,p.outline); }
+      for(let x=cx-6;x<=cx+5;x++){ px(ctx,x,top+12,p.outline); px(ctx,x,top+20,p.outline); }
+      for(let y=top+12;y<=top+20;y++){ px(ctx,cx-6,y,p.outline); px(ctx,cx+5,y,p.outline); }
+    }
 
-      // body outline
-      for(let x=cx-5;x<=cx+4;x++){ px(ctx,x,top+10,p.outline); px(ctx,x,top+19,p.outline); }
-      for(let y=top+10;y<=top+19;y++){ px(ctx,cx-5,y,p.outline); px(ctx,cx+4,y,p.outline); }
+    // Draw BOTH people in ONE canvas, and force a true hand connection between them.
+    function drawCouple(canvas, frame=0){
+      // 64x32 gives room for two 32x32 sprites side-by-side
+      const ctx = setupCanvas(canvas, 64, 32);
+
+      // Draw left person (YOU)
+      drawPerson(ctx, 0, 0, YOU, frame);
+
+      // Draw right person (BUNNY)
+      drawPerson(ctx, 32, 0, BUNNY, frame);
+
+      // === FORCE HAND-HOLD ===
+      // We draw a tiny "bridge" between inner hands so they're always holding hands
+      // regardless of arm swing. This sits around the mid-body area.
+      const y = 20; // tweak if you ever change proportions
+      // Inner hands are near x= (left cx+6..) and (right cx-9..)
+      // Bridge in the gap between sprites (x about 29..34)
+      rect(ctx, 30, y, 4, 2, "rgba(231,196,167,.95)"); // skin bridge
+      // outline around bridge
+      px(ctx, 30, y,   YOU.outline);
+      px(ctx, 33, y,   YOU.outline);
+      px(ctx, 30, y+1, YOU.outline);
+      px(ctx, 33, y+1, YOU.outline);
+
+      // tiny heart sparkle sometimes (subtle, cute)
+      if((frame % 8) === 1){
+        px(ctx, 31, 16, "rgba(57,255,136,.9)");
+        px(ctx, 32, 16, "rgba(57,255,136,.9)");
+        px(ctx, 31, 17, "rgba(57,255,136,.9)");
+        px(ctx, 32, 17, "rgba(57,255,136,.9)");
+      }
     }
 
     function makeMarker(){
       const m = document.createElement("div");
       m.className = "marker idle";
 
-      const a = document.createElement("canvas");
-      a.className = "sprite";
+      const c = document.createElement("canvas");
+      c.className = "couple";
+      m.appendChild(c);
 
-      const b = document.createElement("canvas");
-      b.className = "sprite";
-
-      const hand = document.createElement("div");
-      hand.className = "hand";
-
-      m.append(a, hand, b);
-
-      m._sprites = { a, b };
-      m._frame = 0;
-
-      drawOverworld(a, YOU, 0);
-      drawOverworld(b, BUNNY, 0);
+      m._canvas = c;
+      drawCouple(c, 0);
 
       return m;
     }
 
-    function animateWalk(marker, duration = 650){
-      if(!marker || !marker._sprites) return;
+    function animateWalk(marker, duration = 720){
+      if(!marker || !marker._canvas) return;
       marker.classList.remove("idle");
 
       const start = performance.now();
 
       function step(now){
         const t = now - start;
-
-        // faster cadence for a more "sprite sheet" feel
-        const frame = Math.floor(t / 90) % 4;
-
-        drawOverworld(marker._sprites.a, YOU, frame);
-        drawOverworld(marker._sprites.b, BUNNY, frame);
+        const frame = Math.floor(t / 90) % 8; // faster cadence, smoother feel
+        drawCouple(marker._canvas, frame);
 
         if(t < duration){
           requestAnimationFrame(step);
         } else {
-          drawOverworld(marker._sprites.a, YOU, 0);
-          drawOverworld(marker._sprites.b, BUNNY, 0);
+          drawCouple(marker._canvas, 0);
           marker.classList.add("idle");
         }
       }
-
       requestAnimationFrame(step);
     }
 
