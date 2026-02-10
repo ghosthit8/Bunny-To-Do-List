@@ -44,6 +44,7 @@
       position:relative;
     }
 
+    /* film grain + vignette */
     body::before{
       content:"";
       position:fixed; inset:0;
@@ -56,6 +57,7 @@
       z-index:1;
     }
 
+    /* scanlines */
     body::after{
       content:"";
       position:fixed; inset:0;
@@ -136,14 +138,8 @@
       pointer-events:none;
     }
     .btn:hover::after{transform: translateX(120%);}
-    .btn.primary{
-      border-color: rgba(57,255,136,.55);
-      box-shadow: 0 12px 26px rgba(57,255,136,.08), 0 10px 24px rgba(0,0,0,.45);
-    }
-    .btn.danger{
-      border-color: rgba(255,111,169,.55);
-      box-shadow: 0 12px 26px rgba(255,111,169,.10), 0 10px 24px rgba(0,0,0,.45);
-    }
+    .btn.primary{ border-color: rgba(57,255,136,.55); }
+    .btn.danger{ border-color: rgba(255,111,169,.55); }
 
     main{padding:16px 14px 44px; position:relative; z-index:3;}
 
@@ -176,7 +172,7 @@
       color:rgba(233,255,244,.78);
       font-size:18px;
       display:grid;
-      grid-template-columns: 132px 1fr 200px;
+      grid-template-columns: 120px 1fr 190px;
       gap:12px;
       align-items:center;
       text-transform:lowercase;
@@ -187,7 +183,7 @@
 
     .row{
       display:grid;
-      grid-template-columns: 132px 1fr 200px;
+      grid-template-columns: 120px 1fr 190px;
       gap:12px;
       padding:12px 12px;
       align-items:center;
@@ -201,6 +197,17 @@
     }
     .row:last-child{border-bottom:none}
 
+    /* IMPORTANT: inputs must be "above" everything on mobile */
+    .dayInput, .task{
+      position:relative;
+      z-index:5;
+      pointer-events:auto;
+      -webkit-user-select:text;
+      user-select:text;
+      -webkit-touch-callout: default;
+      touch-action: manipulation;
+    }
+
     .dayInput{
       width:100%;
       border: var(--pixel) solid rgba(36,50,43,.55);
@@ -213,28 +220,23 @@
       border-radius:14px;
       box-shadow: inset 0 0 0 1px rgba(255,111,169,.08);
       letter-spacing:1px;
+      text-transform:none;
     }
-    .dayInput::placeholder{color:rgba(233,255,244,.35)}
 
-    /* FIX: task boxes now wide + actually usable (textarea + autosize) */
     .task{
       width:100%;
-      display:block;
-      min-width:0;
       border: var(--pixel) solid rgba(36,50,43,.55);
       outline:none;
       background: rgba(8,10,15,.55);
       color:var(--fg);
       font-family:"VT323", monospace;
-      font-size:30px;
+      font-size:28px;
       padding:16px 14px;
       border-radius:14px;
+      min-width:0;
       box-shadow: inset 0 0 0 1px rgba(255,111,169,.08);
       line-height:1.05;
-      resize:none;
-      overflow:hidden;
     }
-    .task::placeholder{color:rgba(233,255,244,.42)}
 
     .done .task, .done .dayInput{
       opacity:.60;
@@ -259,13 +261,15 @@
     }
 
     canvas.couple{
-      width:182px;
-      height:124px;
+      width:176px;
+      height:122px;
       image-rendering: pixelated;
       background: transparent;
       border: none;
       display:block;
     }
+
+    .hint{ text-align:right; color:rgba(233,255,244,.35); font-size:18px; white-space:nowrap; }
 
     .footer{
       position:relative; z-index:1;
@@ -275,6 +279,8 @@
       color:rgba(233,255,244,.62);
       font-size:18px;
     }
+    .footer b{color:rgba(255,155,196,.85)}
+    .footer span{color:rgba(57,255,136,.85)}
 
     .hearts{
       position:fixed; inset:0;
@@ -310,10 +316,10 @@
     }
 
     @media (max-width:560px){
-      .head, .row{grid-template-columns: 120px 1fr 200px}
-      canvas.couple{width:170px;height:118px}
+      .head, .row{grid-template-columns: 106px 1fr 190px}
+      canvas.couple{width:164px;height:116px}
       .dayInput{font-size:10px}
-      .task{font-size:28px}
+      .task{font-size:26px}
     }
   </style>
 </head>
@@ -362,8 +368,8 @@
         <div class="list" id="list"></div>
 
         <div class="footer">
-          <div>Auto-saves on this device. ♥</div>
-          <div>Tip: tap a row to move us there. Tap the next day to “complete” the current one.</div>
+          <div>Auto-saves on this device. <b>♥</b></div>
+          <div><span>Tip:</span> tap a row to move us there. Tap the next day to “complete” the current one.</div>
         </div>
       </div>
     </div>
@@ -384,7 +390,6 @@
       markerRow: 0
     };
 
-    // Boy now has GREEN eyes ✅
     const YOU = {
       outline:"#0a0d10",
       skin:"#e7c4a7",
@@ -392,8 +397,8 @@
       blush:"#ff8fb0",
       hair:"#1a1f26",
       hair2:"#0f1318",
-      eye:"#39ff88",     // green
-      eye2:"#1e8f55",    // darker green
+      eye:"#2f7a55",   // subtle green eyes
+      eye2:"#1c3f2d",
       hoodie:"#0f151d",
       hoodie2:"#171f2a",
       hoodieShade:"#0a0f16",
@@ -424,6 +429,7 @@
     };
 
     let state = load();
+    let isEditing = false; // HARD LOCK while typing (mobile-safe)
 
     function load(){
       try{
@@ -440,7 +446,6 @@
     const addRowBtn = document.getElementById("addRow");
     const resetBtn = document.getElementById("reset");
 
-    // ===== Pixel helpers =====
     function setupCanvas(canvas, W, H){
       canvas.width = W; canvas.height = H;
       const ctx = canvas.getContext("2d", { alpha: true });
@@ -460,7 +465,6 @@
       rect(ctx, cx-3, y+4,  6, 1, "rgba(0,0,0,.10)");
     }
 
-    // ===== Cute chibi renderer =====
     function drawPerson(ctx, ox, oy, p, frame){
       const f = frame % 4;
       const step = (f === 1) ? -1 : (f === 3 ? 1 : 0);
@@ -469,7 +473,6 @@
       const cx = ox + 28;
       const headTop = oy + 6 + bob;
 
-      // HEAD
       rect(ctx, cx-10, headTop+2, 20, 16, p.skin);
       rect(ctx, cx-9,  headTop+1, 18, 1,  p.skin);
       rect(ctx, cx-9,  headTop+18,18, 1,  p.skinShade);
@@ -477,7 +480,6 @@
       px(ctx, cx-9, headTop+14, p.skinShade);
       px(ctx, cx+8, headTop+14, p.skinShade);
 
-      // HAIR
       rect(ctx, cx-11, headTop-2, 22, 6, p.hair);
       rect(ctx, cx-11, headTop+4,  4, 12, p.hair);
       rect(ctx, cx+7,  headTop+4,  4, 12, p.hair);
@@ -500,29 +502,23 @@
         rect(ctx, cx+11, headTop+7, 2, 7, p.hair);
       }
 
-      // EYES (boy green now)
       rect(ctx, cx-8, headTop+11, 4, 5, p.eye);
       rect(ctx, cx+4, headTop+11, 4, 5, p.eye);
       rect(ctx, cx-8, headTop+15, 4, 1, p.eye2);
       rect(ctx, cx+4, headTop+15, 4, 1, p.eye2);
-
-      // highlights
       px(ctx, cx-8, headTop+11, "rgba(255,255,255,.95)");
       px(ctx, cx+4, headTop+11, "rgba(255,255,255,.95)");
       px(ctx, cx-7, headTop+12, "rgba(255,255,255,.25)");
       px(ctx, cx+5, headTop+12, "rgba(255,255,255,.25)");
 
-      // blush
       px(ctx, cx-10, headTop+16, p.blush);
       px(ctx, cx-9,  headTop+16, "rgba(255,143,176,.55)");
       px(ctx, cx+9,  headTop+16, p.blush);
       px(ctx, cx+8,  headTop+16, "rgba(255,143,176,.55)");
 
-      // mouth
       rect(ctx, cx-1, headTop+17, 2, 2, "#2a1a16");
       px(ctx, cx, headTop+18, "#ff7da6");
 
-      // glasses
       if(p.glasses){
         rect(ctx, cx-10, headTop+10, 9, 6, "rgba(170,210,255,.09)");
         rect(ctx, cx+1,  headTop+10, 9, 6, "rgba(170,210,255,.09)");
@@ -531,7 +527,6 @@
         px(ctx, cx, headTop+13, p.glasses);
       }
 
-      // BODY
       const bodyY = headTop + 20;
       rect(ctx, cx-8, bodyY, 16, 11, p.hoodie);
       rect(ctx, cx-8, bodyY, 16, 3,  p.hoodie2);
@@ -542,19 +537,16 @@
         px(ctx, cx+1, bodyY+6, "rgba(0,0,0,.25)");
       }
 
-      // arms
       const armY = bodyY + 3;
       rect(ctx, cx-11, armY + (step===-1?1:0), 3, 6, p.hoodie2);
       rect(ctx, cx+8,  armY + (step=== 1?1:0), 3, 6, p.hoodie2);
       rect(ctx, cx-11, armY+6 + (step===-1?1:0), 3, 3, p.skin);
       rect(ctx, cx+8,  armY+6 + (step=== 1?1:0), 3, 3, p.skinShade);
 
-      // legs
       const legY = bodyY + 11;
       rect(ctx, cx-5 + (step===-1?-1:0), legY, 4, 7, p.pants);
       rect(ctx, cx+1 + (step=== 1? 1:0), legY, 4, 7, p.pants2);
 
-      // shoes
       rect(ctx, cx-5 + (step===-1?-1:0), legY+7, 4, 2, p.shoe2);
       rect(ctx, cx+1 + (step=== 1? 1:0), legY+7, 4, 2, p.shoe2);
       rect(ctx, cx-5 + (step===-1?-1:0), legY+8, 4, 1, p.shoe);
@@ -564,13 +556,11 @@
       outlineRect(ctx, cx-8,  bodyY,     16, 11, p.outline);
     }
 
-    // TRUE hand-hold + closer spacing
     function drawCouple(canvas, frame=0){
-      const SHIFT = 18;              // closer than before
+      const SHIFT = 10;
       const ctx = setupCanvas(canvas, 112 - SHIFT, 76);
 
-      // centers
-      const leftCenter  = 28;
+      const leftCenter = 28;
       const rightCenter = 84 - SHIFT;
 
       drawShadow(ctx, leftCenter, 66);
@@ -579,32 +569,19 @@
       drawPerson(ctx, 0, 0, YOU, frame);
       drawPerson(ctx, 56 - SHIFT, 0, BUNNY, frame);
 
-      // Overdraw "reaching arms" so they clearly connect
-      // Meeting point (center between them)
-      const meetX = 56 - Math.floor(SHIFT/2);
-      const meetY = 52;
+      const y = 54;
+      const x = 54 - SHIFT;
+      rect(ctx, x, y, 6, 3, "rgba(231,196,167,.92)");
+      px(ctx, x, y, YOU.outline);
+      px(ctx, x+5, y, YOU.outline);
+      px(ctx, x, y+2, YOU.outline);
+      px(ctx, x+5, y+2, YOU.outline);
 
-      // left arm reaching right
-      rect(ctx, meetX-10, meetY-1, 10, 3, YOU.hoodie2);
-      rect(ctx, meetX-2,  meetY-1, 2, 3, YOU.skin);
-
-      // right arm reaching left
-      rect(ctx, meetX+2,  meetY-1, 10, 3, BUNNY.hoodie2);
-      rect(ctx, meetX+2,  meetY-1, 2, 3, BUNNY.skinShade);
-
-      // hands together (single “握” block)
-      rect(ctx, meetX, meetY-1, 4, 3, "rgba(231,196,167,.95)");
-      px(ctx, meetX,   meetY-1, YOU.outline);
-      px(ctx, meetX+3, meetY-1, YOU.outline);
-      px(ctx, meetX,   meetY+1, YOU.outline);
-      px(ctx, meetX+3, meetY+1, YOU.outline);
-
-      // tiny heart sparkle sometimes
       if((frame % 8) === 1){
-        px(ctx, meetX+1, 30, "rgba(255,111,169,.95)");
-        px(ctx, meetX+2, 30, "rgba(255,155,196,.85)");
-        px(ctx, meetX+1, 31, "rgba(255,155,196,.85)");
-        px(ctx, meetX+2, 31, "rgba(255,111,169,.95)");
+        px(ctx, (56 - SHIFT), 30, "rgba(255,111,169,.95)");
+        px(ctx, (57 - SHIFT), 30, "rgba(255,155,196,.85)");
+        px(ctx, (56 - SHIFT), 31, "rgba(255,155,196,.85)");
+        px(ctx, (57 - SHIFT), 31, "rgba(255,111,169,.95)");
       }
     }
 
@@ -649,6 +626,7 @@
     }
 
     function handleRowClick(targetIndex){
+      if(isEditing) return; // HARD LOCK while typing
       const cur = state.markerRow;
       let didAdvance = false;
 
@@ -664,10 +642,27 @@
       render({ animate: didAdvance });
     }
 
-    // auto-resize textarea so "listing tasks" always shows
-    function autosize(ta){
-      ta.style.height = "0px";
-      ta.style.height = Math.max(54, ta.scrollHeight) + "px";
+    // Capture-phase blockers (mobile-safe)
+    function stopAll(e){
+      e.preventDefault();  // IMPORTANT on some Android browsers
+      e.stopPropagation();
+      if(e.stopImmediatePropagation) e.stopImmediatePropagation();
+    }
+
+    function attachInputGuards(input){
+      // If you *don’t* preventDefault on touch, some browsers treat it like a row tap.
+      input.addEventListener("touchstart", stopAll, { capture:true, passive:false });
+      input.addEventListener("touchend",   stopAll, { capture:true, passive:false });
+      input.addEventListener("pointerdown", stopAll, { capture:true });
+      input.addEventListener("pointerup",   stopAll, { capture:true });
+      input.addEventListener("mousedown", stopAll, { capture:true });
+      input.addEventListener("click", stopAll, { capture:true });
+
+      input.addEventListener("focus", ()=>{ isEditing = true; });
+      input.addEventListener("blur",  ()=>{
+        // small delay so taps don’t instantly advance right after typing
+        setTimeout(()=>{ isEditing = false; }, 120);
+      });
     }
 
     function render(opts = {}){
@@ -677,36 +672,38 @@
       state.rows.forEach((r, ri)=>{
         const row = document.createElement("div");
         row.className = "row" + (r.done ? " done" : "");
+
+        // Support both click + touchend
         row.addEventListener("click", ()=> handleRowClick(ri));
+        row.addEventListener("touchend", (e)=>{
+          if(isEditing) return;
+          handleRowClick(ri);
+        }, { passive:true });
 
         const day = document.createElement("input");
         day.className = "dayInput";
         day.type = "text";
         day.value = r.day || "";
         day.placeholder = "Day";
-        day.addEventListener("click", (e)=> e.stopPropagation());
+        attachInputGuards(day);
         day.addEventListener("input", ()=>{
           r.day = day.value;
           save();
         });
 
-        // textarea FIX (so tasks actually display and edit correctly)
-        const task = document.createElement("textarea");
+        const task = document.createElement("input");
         task.className = "task";
+        task.type = "text";
         task.value = r.task || "";
         task.placeholder = "type something sweet…";
-        task.rows = 1;
-
-        task.addEventListener("click", (e)=> e.stopPropagation());
+        attachInputGuards(task);
         task.addEventListener("input", ()=>{
           r.task = task.value;
-          autosize(task);
           save();
         });
 
-        // allow Enter to create a new line, but Ctrl+Enter advances
         task.addEventListener("keydown",(e)=>{
-          if(e.key==="Enter" && (e.ctrlKey || e.metaKey)){
+          if(e.key==="Enter"){
             e.preventDefault();
             const next = Math.min(state.rows.length-1, ri+1);
             if(next !== ri){
@@ -725,14 +722,14 @@
           marker.addEventListener("click", (e)=> e.stopPropagation());
           right.appendChild(marker);
         } else {
-          right.innerHTML = "";
+          const hint = document.createElement("div");
+          hint.className = "hint";
+          hint.textContent = "";
+          right.appendChild(hint);
         }
 
         row.append(day, task, right);
         list.appendChild(row);
-
-        // ensure correct size after insertion
-        autosize(task);
       });
 
       if(opts.animate){
