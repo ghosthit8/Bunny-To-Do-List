@@ -11,17 +11,20 @@
 
   <style>
     :root{
-      --bg0:#06070a;
-      --bg1:#0b0d13;
-      --panel:rgba(10,12,18,.78);
-      --fg:#e9fff4;
-      --muted:#9fd8bb;
+      --bgTop:#effcff;
+      --bgMid:#efe6ff;
+      --bgBot:#e6fff3;
+
+      --panel:rgba(255,255,255,.62);
+      --fg:#3b2a3a;
+
       --neon:#39ff88;
       --pink:#ff6fa9;
-      --rose:#ff9bc4;
-      --border:#24322b;
-      --shadow: rgba(0,0,0,.65);
-      --r:18px;
+
+      --lav:#a78bfa;
+      --mint:#7cf0c3;
+
+      --shadow: rgba(40,20,50,.20);
       --pixel: 2px;
     }
 
@@ -32,12 +35,12 @@
       color:var(--fg);
       font-family:"VT323", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
       font-size:20px;
-      letter-spacing:.2px;
+
       background:
-        radial-gradient(1200px 900px at 50% -10%, rgba(255,111,169,.12), transparent 60%),
-        radial-gradient(900px 700px at 10% 30%, rgba(57,255,136,.10), transparent 65%),
-        radial-gradient(900px 700px at 90% 60%, rgba(255,155,196,.08), transparent 70%),
-        linear-gradient(180deg, var(--bg1), var(--bg0));
+        radial-gradient(1100px 800px at 18% 18%, rgba(167,139,250,.30), transparent 55%),
+        radial-gradient(900px 700px at 85% 55%, rgba(124,240,195,.28), transparent 58%),
+        radial-gradient(900px 700px at 55% 0%, rgba(255,111,169,.16), transparent 55%),
+        linear-gradient(180deg, var(--bgTop), var(--bgMid) 55%, var(--bgBot));
       min-height:100vh;
       overflow-x:hidden;
       position:relative;
@@ -48,10 +51,9 @@
       position:fixed; inset:0;
       pointer-events:none;
       background:
-        radial-gradient(1200px 900px at 50% 40%, transparent 45%, rgba(0,0,0,.55) 90%),
-        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='.22'/%3E%3C/svg%3E");
-      mix-blend-mode:overlay;
-      opacity:.55;
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='.22'/%3E%3C/svg%3E");
+      mix-blend-mode:soft-light;
+      opacity:.35;
       z-index:1;
     }
 
@@ -61,238 +63,97 @@
       pointer-events:none;
       background: repeating-linear-gradient(
         to bottom,
-        rgba(255,255,255,.03) 0px,
-        rgba(255,255,255,.03) 1px,
+        rgba(40,20,50,.04) 0px,
+        rgba(40,20,50,.04) 1px,
         rgba(0,0,0,0) 2px,
         rgba(0,0,0,0) 6px
       );
-      opacity:.25;
+      opacity:.12;
       z-index:2;
     }
 
-    .wrap{max-width:980px;margin:0 auto; position:relative; z-index:3;}
+    /* ✨ Pixel stars — BIG + BRIGHT + EVERYWHERE */
+   .pixelStars{
+  position:fixed;
+  inset:0;
+  pointer-events:none;
 
-    header{
-      position:sticky; top:0; z-index:10;
-      padding:14px 14px 10px;
-      background: linear-gradient(180deg, rgba(6,7,10,.92), rgba(6,7,10,.70));
-      backdrop-filter: blur(10px);
-      border-bottom: var(--pixel) solid rgba(57,255,136,.18);
-    }
-    .titleRow{display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end; justify-content:space-between;}
-    h1{
-      margin:0;
-      font-family:"Press Start 2P", system-ui;
-      font-size:14px;
-      line-height:1.2;
-      letter-spacing:1px;
-      text-shadow: 0 2px 0 rgba(0,0,0,.55);
-      display:flex; gap:10px; align-items:center;
-    }
-    .heartBadge{
-      display:inline-flex; align-items:center; justify-content:center;
-      width:28px; height:28px;
-      border: var(--pixel) solid rgba(255,111,169,.55);
-      border-radius:8px;
-      background: rgba(255,111,169,.10);
-      box-shadow: 0 8px 22px rgba(255,111,169,.12);
-      transform: translateY(-1px);
-    }
-    .heartBadge span{color:var(--pink); font-size:16px;}
-    .sub{
-      margin-top:8px;
-      color:rgba(233,255,244,.75);
-      font-size:18px;
-      text-shadow: 0 1px 0 rgba(0,0,0,.55);
-    }
-    .sub em{color:rgba(255,155,196,.85); font-style:normal;}
-    .sub b{color:rgba(57,255,136,.9); font-weight:700;}
+  z-index:9999;        /* force on top of everything */
+  isolation:isolate;   /* own stacking context (beats blur/filter contexts) */
 
-    .btnRow{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
-    .btn{
-      border: var(--pixel) solid rgba(36,50,43,.9);
-      background: linear-gradient(180deg, rgba(14,18,26,.85), rgba(8,10,15,.80));
-      color:var(--fg);
-      border-radius:14px;
-      padding:10px 14px;
-      font-size:18px;
-      cursor:pointer;
-      box-shadow: 0 10px 24px rgba(0,0,0,.45);
-      position:relative;
-      overflow:hidden;
-    }
-    .btn.primary{ border-color: rgba(57,255,136,.55); }
-    .btn.danger{ border-color: rgba(255,111,169,.55); }
+  overflow:hidden;
+  opacity:.95;
+  mix-blend-mode: screen;
+  filter: drop-shadow(0 0 10px rgba(167,139,250,.55))
+          drop-shadow(0 0 22px rgba(124,240,195,.35));
+}
 
-    main{padding:16px 14px 44px; position:relative; z-index:3;}
-
-    .card{
-      background: var(--panel);
-      border: var(--pixel) solid rgba(36,50,43,.85);
-      border-radius: var(--r);
-      overflow:hidden;
-      box-shadow: 0 22px 60px rgba(0,0,0,.55);
-      position:relative;
+    .pixelStars .s{
+      position:absolute;
+      width:18px; height:18px;
+      image-rendering: pixelated;
+      opacity:0;
+      transform: translate3d(var(--x,0), var(--y,0), 0) scale(var(--sc,1));
+      animation:
+        twinkleHard var(--tw, 2200ms) steps(7,end) infinite,
+        driftSoft  var(--dr, 12000ms) linear infinite,
+        popPulse   1400ms steps(6,end) infinite;
+      animation-delay: var(--d, 0ms);
     }
-    .card::before{
+
+    .pixelStars .s::before{
       content:"";
       position:absolute; inset:0;
-      pointer-events:none;
       background:
-        radial-gradient(circle at 14px 14px, rgba(255,111,169,.22), transparent 55%),
-        radial-gradient(circle at calc(100% - 14px) 14px, rgba(57,255,136,.14), transparent 55%),
-        radial-gradient(circle at 14px calc(100% - 14px), rgba(57,255,136,.10), transparent 55%),
-        radial-gradient(circle at calc(100% - 14px) calc(100% - 14px), rgba(255,155,196,.18), transparent 55%);
-      opacity:.55;
-      z-index:0;
+        linear-gradient(rgba(183,166,255,.98), rgba(183,166,255,.98)) 8px 2px/2px 14px no-repeat,
+        linear-gradient(rgba(183,166,255,.98), rgba(183,166,255,.98)) 2px 8px/14px 2px no-repeat,
+        linear-gradient(rgba(255,255,255,.98), rgba(255,255,255,.98)) 8px 8px/2px 2px no-repeat,
+        linear-gradient(rgba(255,255,255,.75), rgba(255,255,255,.75)) 14px 4px/2px 2px no-repeat,
+        linear-gradient(rgba(255,255,255,.65), rgba(255,255,255,.65)) 2px 16px/2px 2px no-repeat,
+        linear-gradient(rgba(124,240,195,.80), rgba(124,240,195,.80)) 14px 12px/2px 2px no-repeat;
+      border-radius:3px;
     }
 
-    .head{
-      position:relative; z-index:1;
-      padding:12px 12px;
-      border-bottom: var(--pixel) solid rgba(36,50,43,.75);
-      color:rgba(233,255,244,.78);
-      font-size:18px;
-      display:grid;
-      grid-template-columns: 120px 1fr 190px;
-      gap:12px;
-      align-items:center;
-      text-transform:lowercase;
-    }
-    .head div:last-child{text-align:right}
-
-    .list{display:flex;flex-direction:column; position:relative; z-index:1;}
-
-    .row{
-      display:grid;
-      grid-template-columns: 120px 1fr 190px;
-      gap:12px;
-      padding:12px 12px;
-      align-items:center;
-      border-bottom: 1px solid rgba(36,50,43,.55);
-      position:relative;
+    .pixelStars .s.diamond::before{
       background:
-        linear-gradient(180deg, rgba(255,111,169,.03), transparent 55%),
-        linear-gradient(90deg, rgba(57,255,136,.03), transparent 60%);
-    }
-    .row:last-child{border-bottom:none}
-
-    /* LEFT DAY bubble: smaller + tighter */
-    .dayBtn{
-      width:100%;
-      border: var(--pixel) solid rgba(36,50,43,.55);
-      outline:none;
-      background: rgba(8,10,15,.55);
-      color:rgba(159,216,187,.95);
-      font-family:"Press Start 2P", system-ui;
-      font-size:11px;
-      padding:12px 10px;
-      border-radius:14px;
-      box-shadow: inset 0 0 0 1px rgba(255,111,169,.08);
-      letter-spacing:1px;
-      cursor:pointer;
-      text-align:left;
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
+        linear-gradient(rgba(255,255,255,.96), rgba(255,255,255,.96)) 8px 4px/2px 10px no-repeat,
+        linear-gradient(rgba(255,255,255,.96), rgba(255,255,255,.96)) 4px 8px/10px 2px no-repeat,
+        linear-gradient(rgba(183,166,255,.92), rgba(183,166,255,.92)) 8px 8px/2px 2px no-repeat,
+        linear-gradient(rgba(124,240,195,.70), rgba(124,240,195,.70)) 14px 6px/2px 2px no-repeat,
+        linear-gradient(rgba(255,111,169,.55), rgba(255,111,169,.55)) 2px 14px/2px 2px no-repeat;
     }
 
-    /* TASK bubble: smaller text + longer area */
-    .task{
-      width:100%;
-      border: var(--pixel) solid rgba(36,50,43,.55);
-      outline:none;
-      background: rgba(8,10,15,.55);
-      color:var(--fg);
-      font-family:"VT323", monospace;
-      font-size:22px;           /* ✅ smaller text */
-      padding:16px 14px;
-      border-radius:16px;
-      min-width:0;
-      box-shadow: inset 0 0 0 1px rgba(255,111,169,.08);
-      line-height:1.15;
-      min-height:92px;          /* ✅ taller bubble */
-      resize:none;
-
-      /* keep normal word wrapping */
-      word-break: normal;
-      overflow-wrap: break-word;
+    @keyframes twinkleHard{
+      0%{opacity:0}
+      12%{opacity:.45}
+      24%{opacity:1}
+      40%{opacity:.85}
+      60%{opacity:.55}
+      100%{opacity:0}
     }
-    .task::placeholder{color:rgba(233,255,244,.42)}
-
-    textarea, input, button{
-      -webkit-appearance:none;
-      appearance:none;
-      touch-action: manipulation;
+    @keyframes driftSoft{
+      0%{ transform: translate3d(var(--x,0), var(--y,0), 0) scale(var(--sc,1)); }
+      100%{ transform: translate3d(calc(var(--x,0) - 10px), calc(var(--y,0) + 8px), 0) scale(var(--sc,1)); }
+    }
+    @keyframes popPulse{
+      0%,100%{ transform: translate3d(var(--x,0), var(--y,0), 0) scale(calc(var(--sc,1) * 1)); }
+      50%{ transform: translate3d(var(--x,0), var(--y,0), 0) scale(calc(var(--sc,1) * 1.12)); }
     }
 
-    .done .task, .done .dayBtn{
-      opacity:.60;
-      text-decoration: line-through;
-      text-decoration-thickness: 3px;
-      text-decoration-color: rgba(255,111,169,.55);
-      filter:saturate(.85);
-    }
-
-    .marker{
-      display:flex;
-      align-items:center;
-      justify-content:flex-end;
-      pointer-events:auto;
-      transform-origin: 50% 100%;
-      filter: drop-shadow(0 10px 18px rgba(0,0,0,.65));
-    }
-    .marker.idle{ animation: idleBob 1.6s ease-in-out infinite; }
-    @keyframes idleBob{
-      0%,100%{transform:translateY(0)}
-      50%{transform:translateY(-3px)}
-    }
-
-    canvas.couple{
-      width:176px;
-      height:122px;
-      image-rendering: pixelated;
-      background: transparent;
-      border: none;
-      display:block;
-    }
-
-    .usCell{
-      display:flex;
-      justify-content:flex-end;
-      align-items:center;
-    }
-
-    .footer{
-      position:relative; z-index:1;
-      padding:12px 12px;
-      border-top: var(--pixel) solid rgba(36,50,43,.55);
-      display:flex; gap:10px; flex-wrap:wrap; justify-content:space-between;
-      color:rgba(233,255,244,.62);
-      font-size:18px;
-    }
-    .footer b{color:rgba(255,155,196,.85)}
-    .footer span{color:rgba(57,255,136,.85)}
-
-    .hearts{
-      position:fixed; inset:0;
-      pointer-events:none;
-      z-index:4;
-      opacity:.45;
-    }
+    /* floating hearts */
+    .hearts{position:fixed; inset:0; pointer-events:none; z-index:3; opacity:.28;}
     .hearts i{
       position:absolute;
       width:10px; height:10px;
       background:
-        radial-gradient(circle at 30% 35%, rgba(255,255,255,.65), transparent 35%),
+        radial-gradient(circle at 30% 35%, rgba(255,255,255,.70), transparent 35%),
         linear-gradient(180deg, rgba(255,111,169,.95), rgba(255,155,196,.75));
       transform: rotate(45deg);
       border-radius:2px;
-      box-shadow: 0 10px 18px rgba(255,111,169,.15);
+      box-shadow: 0 10px 18px rgba(255,111,169,.12);
       animation: floaty linear infinite;
     }
-    .hearts i::before,
-    .hearts i::after{
+    .hearts i::before,.hearts i::after{
       content:"";
       position:absolute;
       width:10px; height:10px;
@@ -307,43 +168,248 @@
       100%{ transform: translate3d(0, -20vh, 0) rotate(45deg); opacity:0; }
     }
 
-    /* ✅ MOBILE: Make task bubble LONG by moving sprites UNDER the row */
+    /* click burst hearts */
+    #burstLayer{ position:fixed; inset:0; pointer-events:none; z-index:50; }
+    .burstHeart{
+      position:absolute;
+      width:10px; height:10px;
+      transform: translate(-50%,-50%) rotate(45deg);
+      border-radius:2px;
+      background:
+        radial-gradient(circle at 30% 35%, rgba(255,255,255,.80), transparent 35%),
+        linear-gradient(180deg, rgba(255,111,169,.98), rgba(255,155,196,.78));
+      box-shadow: 0 10px 18px rgba(255,111,169,.18);
+      animation: burstMove var(--dur, 720ms) cubic-bezier(.16,.8,.22,1) forwards;
+      opacity:1;
+      image-rendering: pixelated;
+      will-change: transform, opacity;
+    }
+    .burstHeart::before,.burstHeart::after{
+      content:"";
+      position:absolute;
+      width:10px; height:10px;
+      border-radius:50%;
+      background: inherit;
+      top:-5px; left:0;
+    }
+    .burstHeart::after{left:-5px; top:0;}
+    @keyframes burstMove{
+      0%{ transform: translate(-50%,-50%) rotate(45deg) scale(var(--sc0,1)); opacity:1; }
+      100%{ transform: translate(calc(-50% + var(--dx,0px)), calc(-50% + var(--dy,0px))) rotate(45deg) scale(var(--sc1,.6)); opacity:0; }
+    }
+
+    .wrap{max-width:980px;margin:0 auto; position:relative; z-index:5;}
+
+    header{
+      position:sticky; top:0; z-index:10;
+      padding:14px 14px 10px;
+      background: linear-gradient(180deg, rgba(255,255,255,.70), rgba(255,255,255,.40));
+      backdrop-filter: blur(12px);
+      border-bottom: var(--pixel) solid rgba(167,139,250,.35);
+      box-shadow: 0 10px 28px rgba(40,20,50,.10);
+    }
+
+    .titleRow{display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end; justify-content:space-between;}
+    h1{
+      margin:0;
+      font-family:"Press Start 2P", system-ui;
+      font-size:14px;
+      line-height:1.2;
+      letter-spacing:1px;
+      color: rgba(76,44,105,.92);
+      text-shadow: 0 2px 0 rgba(255,255,255,.75);
+      display:flex; gap:10px; align-items:center;
+    }
+    .heartBadge{
+      display:inline-flex; align-items:center; justify-content:center;
+      width:28px; height:28px;
+      border: var(--pixel) solid rgba(255,111,169,.45);
+      border-radius:8px;
+      background: rgba(255,111,169,.10);
+      box-shadow: 0 10px 26px rgba(255,111,169,.12);
+      transform: translateY(-1px);
+    }
+    .heartBadge span{color:#ff6fa9; font-size:16px;}
+
+    .btnRow{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+    .btn{
+      border: var(--pixel) solid rgba(167,139,250,.55);
+      background: linear-gradient(180deg, rgba(255,255,255,.78), rgba(255,255,255,.48));
+      color: rgba(76,44,105,.95);
+      border-radius:14px;
+      padding:10px 14px;
+      font-size:18px;
+      cursor:pointer;
+      box-shadow: 0 12px 26px rgba(40,20,50,.12);
+      backdrop-filter: blur(10px);
+    }
+    .btn.primary{ border-color: rgba(124,240,195,.70); }
+    .btn.danger{ border-color: rgba(255,111,169,.55); }
+
+    main{padding:16px 14px 44px; position:relative; z-index:5;}
+
+    .card{
+      background: var(--panel);
+      border: var(--pixel) solid rgba(167,139,250,.38);
+      border-radius: 18px;
+      overflow:hidden;
+      box-shadow: 0 22px 60px rgba(40,20,50,.18);
+      position:relative;
+      backdrop-filter: blur(12px);
+    }
+
+    .head{
+      position:relative; z-index:1;
+      padding:12px 12px;
+      border-bottom: var(--pixel) solid rgba(167,139,250,.28);
+      color: rgba(76,44,105,.85);
+      font-size:18px;
+      display:grid;
+      grid-template-columns: 120px 1fr 190px;
+      gap:12px;
+      align-items:center;
+      text-transform:lowercase;
+      background: linear-gradient(180deg, rgba(255,255,255,.28), rgba(255,255,255,0));
+    }
+    .head div:last-child{text-align:right}
+
+    .list{display:flex;flex-direction:column; position:relative; z-index:1;}
+
+    .row{
+      display:grid;
+      grid-template-columns: 120px 1fr 190px;
+      gap:12px;
+      padding:12px 12px;
+      align-items:center;
+      border-bottom: 1px solid rgba(167,139,250,.22);
+      position:relative;
+      z-index:0;
+    }
+
+    .row::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      border-radius:0;
+      background:
+        radial-gradient(400px 220px at 18% 35%, rgba(167,139,250,.10), transparent 60%),
+        radial-gradient(420px 240px at 78% 55%, rgba(124,240,195,.10), transparent 62%);
+      z-index:0;
+      pointer-events:none;
+    }
+
+    .row > *{ position:relative; z-index:1; }
+
+    .dayBtn{
+      width:100%;
+      border: var(--pixel) solid rgba(167,139,250,.55);
+      outline:none;
+      background: rgba(255,255,255,.62);
+      color: rgba(76,44,105,.90);
+      font-family:"Press Start 2P", system-ui;
+      font-size:11px;
+      padding:12px 10px;
+      border-radius:14px;
+      box-shadow:
+        inset 0 0 0 1px rgba(255,255,255,.65),
+        0 10px 22px rgba(40,20,50,.10);
+      cursor:pointer;
+      text-align:left;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    .task{
+      width:100%;
+      border: var(--pixel) solid rgba(167,139,250,.45);
+      outline:none;
+      background: rgba(255,255,255,.70);
+      color: var(--fg);
+      font-family:"VT323", monospace;
+      font-size:22px;
+      padding:16px 14px;
+      border-radius:16px;
+      min-width:0;
+      box-shadow:
+        inset 0 0 0 1px rgba(255,255,255,.70),
+        0 10px 24px rgba(40,20,50,.10);
+      line-height:1.15;
+      min-height:92px;
+      resize:none;
+      overflow-wrap: break-word;
+    }
+
+    textarea, input, button{-webkit-appearance:none;appearance:none;touch-action: manipulation;}
+
+    .done .task, .done .dayBtn{
+      opacity:.62;
+      text-decoration: line-through;
+      text-decoration-thickness: 3px;
+      text-decoration-color: rgba(255,111,169,.55);
+      filter:saturate(.92);
+    }
+
+    .usCell{
+      display:flex;
+      justify-content:flex-end;
+      align-items:center;
+      position:relative;
+      z-index:9;
+      isolation:isolate;
+    }
+
+    .marker{
+      display:flex;
+      align-items:center;
+      justify-content:flex-end;
+      transform-origin: 50% 100%;
+      filter: drop-shadow(0 12px 18px rgba(40,20,50,.22));
+      position:relative;
+      z-index:10;
+    }
+    .marker.idle{ animation: idleBob 1.6s ease-in-out infinite; }
+    @keyframes idleBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+
+    canvas.couple{
+      width:176px;
+      height:122px;
+      image-rendering: pixelated;
+      background: transparent;
+      border:none;
+      display:block;
+      position:relative;
+      z-index:11;
+    }
+
+    .footer{
+      position:relative; z-index:1;
+      padding:12px 12px;
+      border-top: var(--pixel) solid rgba(167,139,250,.22);
+      display:flex; gap:10px; flex-wrap:wrap; justify-content:space-between;
+      color: rgba(76,44,105,.70);
+      font-size:18px;
+      background: linear-gradient(180deg, rgba(255,255,255,.22), rgba(255,255,255,0));
+    }
+    .footer b{color:rgba(255,111,169,.88)}
+    .footer span{color:rgba(60,180,140,.95)}
+
     @media (max-width:560px){
-      .head{
-        grid-template-columns: 86px 1fr;
-        grid-template-areas: "day task" "us us";
-        gap:10px;
-      }
+      .head{grid-template-columns: 86px 1fr; grid-template-areas:"day task" "us us"; gap:10px;}
       .head .h-day{grid-area:day}
       .head .h-task{grid-area:task}
-      .head .h-us{
-        grid-area:us;
-        text-align:right;
-        opacity:.65;
-        padding-top:2px;
-      }
-
+      .head .h-us{grid-area:us;text-align:right;opacity:.65;padding-top:2px;}
       .row{
         grid-template-columns: 86px 1fr;
-        grid-template-areas:
-          "day task"
-          "us  us";
+        grid-template-areas:"day task" "us us";
         gap:10px;
         align-items:start;
       }
-
       .dayBtn{ grid-area:day; font-size:10px; padding:10px 10px; }
       .task{ grid-area:task; font-size:21px; min-height:96px; }
-      .usCell{
-        grid-area:us;
-        justify-content:flex-end;
-        padding-top:8px;
-      }
-
+      .usCell{grid-area:us; justify-content:flex-end; padding-top:8px;}
       canvas.couple{ width:140px; height:100px; }
     }
-
-    /* extra-tight phones */
     @media (max-width:380px){
       .head, .row{ grid-template-columns: 80px 1fr; }
       canvas.couple{ width:126px; height:90px; }
@@ -351,7 +417,9 @@
     }
   </style>
 </head>
+
 <body>
+  <div class="pixelStars" id="pixelStars" aria-hidden="true"></div>
 
   <div class="hearts" aria-hidden="true">
     <i style="left:8%;  animation-duration:9.5s; animation-delay:-2s;  opacity:.35; transform:scale(1.2) rotate(45deg)"></i>
@@ -363,6 +431,8 @@
     <i style="left:90%; animation-duration:12.6s; animation-delay:-3s;  opacity:.28; transform:scale(1.05) rotate(45deg)"></i>
   </div>
 
+  <div id="burstLayer" aria-hidden="true"></div>
+
   <header>
     <div class="wrap">
       <div class="titleRow">
@@ -372,9 +442,6 @@
             Hand-in-Hand To-Do
             <span style="color:var(--neon)">💚</span>
           </h1>
-          <div class="sub">
-            Tap the <b>DAY pill</b> to advance → previous day crosses out → <em>we walk down</em>.
-          </div>
         </div>
         <div class="btnRow">
           <button class="btn primary" id="addRow">+ Row</button>
@@ -397,7 +464,7 @@
 
         <div class="footer">
           <div>Auto-saves on this device. <b>♥</b></div>
-          <div><span>Tip:</span> type in the task bubble. Tap the day pill to move us down.</div>
+          <div><span>Tip:</span> type in the task bubble. Tap anywhere on a row to move us there (everything above gets crossed out).</div>
         </div>
       </div>
     </div>
@@ -423,13 +490,13 @@
       skin:"#e7c4a7",
       skinShade:"#d6ab8b",
       blush:"#ff8fb0",
-      hair:"#1a1f26",
-      hair2:"#0f1318",
-      eye:"#2f7a55",   // subtle green eyes
-      eye2:"#1c3f2d",
-      hoodie:"#0f151d",
-      hoodie2:"#171f2a",
-      hoodieShade:"#0a0f16",
+      hair:"#5a3a22",
+      hair2:"#f3d58b",
+      eye:"#0b2b1a",
+      eye2:"#071a10",
+      tee:"#050607",
+      tee2:"#0d0f12",
+      teeShade:"#020304",
       pants:"#0c1117",
       pants2:"#121a24",
       shoe:"#0a0d10",
@@ -446,11 +513,12 @@
       hair2:"#4a26b8",
       eye:"#3b2a22",
       eye2:"#1f1410",
-      hoodie:"#111017",
-      hoodie2:"#1a1624",
-      hoodieShade:"#0b0a10",
-      pants:"#0e0e14",
-      pants2:"#161625",
+      tee:"#0f0f14",
+      tee2:"#1b1b26",
+      teeShade:"#0a0a10",
+      denim:"#2b5bff",
+      denim2:"#1f3fb6",
+      denimShade:"#162a7a",
       shoe:"#0a0d10",
       shoe2:"#171726",
       glasses:"#d7e8ff"
@@ -471,6 +539,73 @@
 
     const list = document.getElementById("list");
 
+    /* stars */
+    const starLayer = document.getElementById("pixelStars");
+    function makeStars(count=90){
+      if(!starLayer) return;
+      starLayer.innerHTML = "";
+      const vw = Math.max(320, window.innerWidth);
+      const vh = Math.max(560, window.innerHeight);
+      for(let i=0;i<count;i++){
+        const s = document.createElement("div");
+        s.className = "s";
+        if(Math.random() < 0.25) s.classList.add("diamond");
+        const x = Math.floor(Math.random()*vw);
+        const y = Math.floor(Math.random()*vh);
+        const sc = (Math.random()*1.2 + 0.85).toFixed(2);
+        const tw = Math.floor(1200 + Math.random()*2000);
+        const dr = Math.floor(9000 + Math.random()*14000);
+        const d  = Math.floor(Math.random()*2600);
+        s.style.setProperty("--x", x+"px");
+        s.style.setProperty("--y", y+"px");
+        s.style.setProperty("--sc", sc);
+        s.style.setProperty("--tw", tw+"ms");
+        s.style.setProperty("--dr", dr+"ms");
+        s.style.setProperty("--d",  (-d)+"ms");
+        starLayer.appendChild(s);
+      }
+    }
+    makeStars(40);
+    window.addEventListener("resize", ()=>makeStars(40));
+
+    /* click heart burst */
+    const burstLayer = document.getElementById("burstLayer");
+    function heartBurst(x, y){
+      if(!burstLayer) return;
+      const n = 14;
+      for(let i=0;i<n;i++){
+        const h = document.createElement("div");
+        h.className = "burstHeart";
+        h.style.left = x+"px";
+        h.style.top  = y+"px";
+
+        const angle = Math.random() * Math.PI * 2;
+        const dist  = 18 + Math.random()*52;
+        const dx = Math.cos(angle) * dist;
+        const dy = Math.sin(angle) * dist - (10 + Math.random()*18);
+
+        const dur = 520 + Math.random()*420;
+        const sc0 = (0.85 + Math.random()*0.5).toFixed(2);
+        const sc1 = (0.45 + Math.random()*0.35).toFixed(2);
+
+        h.style.setProperty("--dx", dx.toFixed(1)+"px");
+        h.style.setProperty("--dy", dy.toFixed(1)+"px");
+        h.style.setProperty("--dur", dur.toFixed(0)+"ms");
+        h.style.setProperty("--sc0", sc0);
+        h.style.setProperty("--sc1", sc1);
+
+        burstLayer.appendChild(h);
+        setTimeout(()=> h.remove(), dur + 60);
+      }
+    }
+    document.addEventListener("pointerdown", (e)=>{
+      if(e.button !== undefined && e.button !== 0) return;
+      const x = e.clientX ?? (e.touches && e.touches[0] ? e.touches[0].clientX : innerWidth/2);
+      const y = e.clientY ?? (e.touches && e.touches[0] ? e.touches[0].clientY : innerHeight/2);
+      heartBurst(x, y);
+    }, { passive:true });
+
+    /* sprites */
     function setupCanvas(canvas, W, H){
       canvas.width = W; canvas.height = H;
       const ctx = canvas.getContext("2d", { alpha: true });
@@ -484,6 +619,12 @@
       for(let i=0;i<w;i++){ px(ctx, x+i, y, c); px(ctx, x+i, y+h-1, c); }
       for(let j=0;j<h;j++){ px(ctx, x, y+j, c); px(ctx, x+w-1, y+j, c); }
     }
+    function cut4(ctx, x, y, w, h){
+      ctx.clearRect(x, y, 1, 1);
+      ctx.clearRect(x+w-1, y, 1, 1);
+      ctx.clearRect(x, y+h-1, 1, 1);
+      ctx.clearRect(x+w-1, y+h-1, 1, 1);
+    }
     function drawShadow(ctx, cx, y){
       rect(ctx, cx-8, y,   16, 2, "rgba(0,0,0,.26)");
       rect(ctx, cx-6, y+2, 12, 2, "rgba(0,0,0,.18)");
@@ -496,63 +637,204 @@
       const bob  = (f === 1 || f === 3) ? 0 : 1;
 
       const cx = ox + 28;
-      const headTop = oy + 6 + bob;
+      const top = oy + 2 + bob;
 
-      rect(ctx, cx-10, headTop+2, 20, 16, p.skin);
-      rect(ctx, cx-9,  headTop+1, 18, 1,  p.skin);
-      rect(ctx, cx-9,  headTop+18,18, 1,  p.skinShade);
+      const hw=22, hh=18;
+      const hx = cx - Math.floor(hw/2);
+      const hy = top + 2;
 
-      rect(ctx, cx-11, headTop-2, 22, 6, p.hair);
-      rect(ctx, cx-11, headTop+4,  4, 12, p.hair);
-      rect(ctx, cx+7,  headTop+4,  4, 12, p.hair);
+      // head
+      rect(ctx, hx, hy, hw, hh, p.skin);
+      rect(ctx, hx+2, hy+hh-2, hw-4, 1, p.skinShade);
+      rect(ctx, hx+3, hy+hh-1, hw-6, 1, p.skinShade);
+      cut4(ctx, hx, hy, hw, hh);
+      cut4(ctx, hx+1, hy+1, hw-2, hh-2);
+      rect(ctx, cx-2, hy+hh, 4, 2, p.skinShade);
 
-      rect(ctx, cx-10, headTop+6, 20, 3, p.hair2);
+      // hair base
+      rect(ctx, hx-2, hy-5, hw+4, 8, p.hair);
+
+      // side hair blocks
+      const sideColorL = (p === YOU) ? p.hair : p.hair;
+      const sideColorR = (p === YOU) ? p.hair : p.hair;
+      rect(ctx, hx-4, hy+3, 6, 10, sideColorL);
+      rect(ctx, hx+hw-2, hy+3, 6, 10, sideColorR);
+
+      // bangs/top highlight
+      rect(ctx, hx+3, hy+2, hw-6, 3, p.hair2);
+      rect(ctx, hx+4, hy+5, hw-8, 2, p.hair2);
+
+      // extra bangs pixels (YOU)
+      if(p === YOU){
+        rect(ctx, hx+2,  hy+6, 2, 3, p.hair2);
+        rect(ctx, hx+6,  hy+6, 3, 1, p.hair2);
+        rect(ctx, hx+10, hy+6, 3, 1, p.hair2);
+        px(ctx, hx+7,  hy+7, p.hair2);
+        px(ctx, hx+11, hy+7, p.hair2);
+      }
+
+      // Bunny extras
+      if(p === BUNNY){
+        rect(ctx, hx+3,     hy-10, 6, 5, p.hair);
+        rect(ctx, hx+hw-9,  hy-10, 6, 5, p.hair);
+        rect(ctx, hx+4,     hy-9,  4, 3, "rgba(255,155,196,.70)");
+        rect(ctx, hx+hw-8,  hy-9,  4, 3, "rgba(255,155,196,.70)");
+        px(ctx, hx+3, hy-10, p.outline); px(ctx, hx+8, hy-10, p.outline);
+        px(ctx, hx+hw-9, hy-10, p.outline); px(ctx, hx+hw-4, hy-10, p.outline);
+
+        rect(ctx, hx-6, hy+10, 6, 14, p.hair);
+        rect(ctx, hx+hw, hy+10, 6, 14, p.hair);
+        rect(ctx, hx-5, hy+14, 4, 10, p.hair2);
+        rect(ctx, hx+hw+1, hy+14, 4, 10, p.hair2);
+      }
+
+      // eyes
+      const ey = hy + 8;
+      rect(ctx, cx-10, ey, 7, 1, p.outline);
+      rect(ctx, cx+3,  ey, 7, 1, p.outline);
+
+      rect(ctx, cx-10, ey+1, 7, 7, p.eye);
+      rect(ctx, cx+3,  ey+1, 7, 7, p.eye);
+
+      rect(ctx, cx-10, ey+7, 7, 1, p.eye2);
+      rect(ctx, cx+3,  ey+7, 7, 1, p.eye2);
+
+      px(ctx, cx-9, ey+2, "rgba(255,255,255,.95)");
+      px(ctx, cx-8, ey+3, "rgba(255,255,255,.80)");
+      px(ctx, cx+4, ey+2, "rgba(255,255,255,.95)");
+      px(ctx, cx+5, ey+3, "rgba(255,255,255,.80)");
+
+      // blush + mouth
+      rect(ctx, cx-13, hy+14, 4, 2, "rgba(255,143,176,.55)");
+      rect(ctx, cx+9,  hy+14, 4, 2, "rgba(255,143,176,.55)");
+
+      rect(ctx, cx-1, hy+15, 2, 1, "rgba(20,10,12,.55)");
+      rect(ctx, cx-1, hy+16, 2, 1, "rgba(255,155,196,.55)");
+
+      // glasses
+      if (p === BUNNY && p.glasses) {
+        const gy = ey+1;
+        const lensFill = "rgba(215,232,255,.22)";
+        rect(ctx, cx-10, gy, 8, 7, lensFill);
+        outlineRect(ctx, cx-11, gy-1, 10, 9, p.glasses);
+        rect(ctx, cx+2, gy, 8, 7, lensFill);
+        outlineRect(ctx, cx+1, gy-1, 10, 9, p.glasses);
+        rect(ctx, cx-1, gy+3, 2, 2, p.glasses);
+        rect(ctx, cx-14, gy+2, 2, 1, p.glasses);
+        rect(ctx, cx+12, gy+2, 2, 1, p.glasses);
+      }
+
+      // ===== BODY / HOODIE =====
+      const bodyY = hy + hh + 2;
+
+      if(p === YOU){
+        // wider hoodie torso
+        rect(ctx, cx-10, bodyY, 20, 12, p.tee);
+        rect(ctx, cx-10, bodyY, 20, 4,  p.tee2);
+
+        // bottom hoodie fold
+        rect(ctx, cx-9, bodyY+10, 18, 2, p.teeShade);
+
+        // hood bump behind neck (hood DOWN)
+        rect(ctx, cx-7, bodyY-4, 14, 6, p.tee2);
+        rect(ctx, cx-5, bodyY-2, 10, 3, p.teeShade);
+
+        // hoodie strings (subtle)
+        rect(ctx, cx-2, bodyY+3, 1, 5, "rgba(233,255,244,.65)");
+        rect(ctx, cx+1, bodyY+3, 1, 5, "rgba(233,255,244,.65)");
+        px(ctx, cx-2, bodyY+8, p.outline);
+        px(ctx, cx+1, bodyY+8, p.outline);
+
+        // little neon chest accent
+        rect(ctx, cx-1, bodyY+6, 2, 2, p.accent);
+
+        // outlines
+        outlineRect(ctx, cx-10, bodyY, 20, 12, p.outline);
+        outlineRect(ctx, cx-7, bodyY-4, 14, 6, p.outline);
+      } else {
+        // Bunny / default shirt
+        rect(ctx, cx-8, bodyY, 16, 10, p.tee);
+        rect(ctx, cx-8, bodyY, 16, 3,  p.tee2);
+        rect(ctx, cx-7, bodyY+8, 14, 1, p.teeShade);
+
+        outlineRect(ctx, cx-8, bodyY, 16, 10, p.outline);
+      }
+
+      // Bunny shirt icon
+      if(p === BUNNY){
+        const gx = cx-3, gy = bodyY+4;
+        outlineRect(ctx, gx-3, gy-1, 7, 7, "rgba(255,155,196,.70)");
+        rect(ctx, gx-2, gy, 5, 5, "rgba(0,0,0,.35)");
+        px(ctx, gx-1, gy+2, "rgba(233,255,244,.80)");
+        px(ctx, gx+1, gy+2, "rgba(233,255,244,.80)");
+        rect(ctx, gx-1, gy+3, 3, 1, "rgba(233,255,244,.65)");
+      }
+
+      // ===== ARMS =====
+      const armY = bodyY + 3;
+
+      if(p === YOU){
+        // chunky hoodie sleeves (clean outline)
+        rect(ctx, cx-13, armY, 5, 7, p.tee2);
+        rect(ctx, cx-12, armY+5, 3, 3, p.skin);
+        outlineRect(ctx, cx-13, armY, 5, 7, p.outline);
+
+        rect(ctx, cx+8, armY, 5, 7, p.tee2);
+        rect(ctx, cx+9, armY+5, 3, 3, p.skinShade);
+        outlineRect(ctx, cx+8, armY, 5, 7, p.outline);
+      } else {
+        // default sleeves
+        rect(ctx, cx-11, armY + (step===-1?1:0), 3, 5, p.tee2);
+        rect(ctx, cx-11, armY+5 + (step===-1?1:0), 3, 2, p.skin);
+        rect(ctx, cx+8,  armY + (step=== 1?1:0), 3, 5, p.tee2);
+        rect(ctx, cx+8,  armY+5 + (step=== 1?1:0), 3, 2, p.skinShade);
+      }
+
+      // ===== LEGS =====
+      const legY = bodyY + (p === YOU ? 12 : 10);
 
       if(p === BUNNY){
-        rect(ctx, cx-13, headTop+12, 7, 12, p.hair);
-        rect(ctx, cx+6,  headTop+12, 7, 12, p.hair);
+        rect(ctx, cx-8, legY,   16, 2, p.denim2);
+        rect(ctx, cx-8, legY+2, 16, 4, p.denim);
+        rect(ctx, cx-8, legY+5, 16, 1, p.denimShade);
+        rect(ctx, cx-1, legY+2, 2, 4, p.denim2);
+
+        rect(ctx, cx-7, legY+6, 6, 6, p.skin);
+        rect(ctx, cx+1, legY+6, 6, 6, p.skinShade);
+
+        rect(ctx, cx-8, legY+12, 7, 2, p.shoe);
+        rect(ctx, cx+1, legY+12, 7, 2, p.shoe2);
+
+        outlineRect(ctx, cx-8, legY, 16, 14, p.outline);
+      } else {
+        rect(ctx, cx-8, legY, 16, 2, p.pants2);
+        rect(ctx, cx-7, legY+2, 6, 8, p.pants);
+        rect(ctx, cx+1, legY+2, 6, 8, p.pants);
+
+        rect(ctx, cx-8, legY+10, 7, 2, p.shoe);
+        rect(ctx, cx+1, legY+10, 7, 2, p.shoe2);
+
+        outlineRect(ctx, cx-8, legY, 16, 12, p.outline);
       }
 
-      rect(ctx, cx-8, headTop+11, 4, 5, p.eye);
-      rect(ctx, cx+4, headTop+11, 4, 5, p.eye);
-      rect(ctx, cx-8, headTop+15, 4, 1, p.eye2);
-      rect(ctx, cx+4, headTop+15, 4, 1, p.eye2);
-      px(ctx, cx-8, headTop+11, "rgba(255,255,255,.95)");
-      px(ctx, cx+4, headTop+11, "rgba(255,255,255,.95)");
-
-      const bodyY = headTop + 20;
-      rect(ctx, cx-8, bodyY, 16, 11, p.hoodie);
-      rect(ctx, cx-8, bodyY, 16, 3,  p.hoodie2);
-
-      if(p.accent){
-        rect(ctx, cx-1, bodyY+5, 2, 2, p.accent);
-      }
-
-      const armY = bodyY + 3;
-      rect(ctx, cx-11, armY + (step===-1?1:0), 3, 6, p.hoodie2);
-      rect(ctx, cx+8,  armY + (step=== 1?1:0), 3, 6, p.hoodie2);
-      rect(ctx, cx-11, armY+6 + (step===-1?1:0), 3, 3, p.skin);
-      rect(ctx, cx+8,  armY+6 + (step=== 1?1:0), 3, 3, p.skinShade);
-
-      outlineRect(ctx, cx-10, headTop+1, 20, 18, p.outline);
-      outlineRect(ctx, cx-8,  bodyY,     16, 11, p.outline);
+      // head outline last
+      outlineRect(ctx, hx, hy, hw, hh, p.outline);
     }
 
     function drawCouple(canvas, frame=0){
       const SHIFT = 10;
-      const ctx = setupCanvas(canvas, 112 - SHIFT, 76);
+      const ctx = setupCanvas(canvas, 112 - SHIFT, 78);
 
       const leftCenter = 28;
       const rightCenter = 84 - SHIFT;
 
-      drawShadow(ctx, leftCenter, 66);
-      drawShadow(ctx, rightCenter, 66);
+      drawShadow(ctx, leftCenter, 68);
+      drawShadow(ctx, rightCenter, 68);
 
       drawPerson(ctx, 0, 0, YOU, frame);
       drawPerson(ctx, 56 - SHIFT, 0, BUNNY, frame);
 
-      // hand bridge
-      const y = 54;
+      const y = 56;
       const x = 54 - SHIFT;
       rect(ctx, x, y, 6, 3, "rgba(231,196,167,.92)");
       px(ctx, x, y, YOU.outline);
@@ -595,16 +877,13 @@
       }
     }
 
-    function advanceTo(targetIndex){
-      const cur = state.markerRow;
-      let didAdvance = false;
-      if(targetIndex > cur){
-        state.rows[cur].done = true;
-        state.markerRow = targetIndex;
-        didAdvance = true;
-      } else {
-        state.markerRow = targetIndex;
-      }
+    function setProgress(targetIndex, opts = {}){
+      const cur = state.markerRow || 0;
+      targetIndex = Math.max(0, Math.min(state.rows.length-1, targetIndex));
+      state.rows.forEach((row, i) => { row.done = i < targetIndex; });
+      state.markerRow = targetIndex;
+
+      const didAdvance = targetIndex > cur;
       save();
       render({ animate: didAdvance });
     }
@@ -616,12 +895,22 @@
       state.rows.forEach((r, ri)=>{
         const row = document.createElement("div");
         row.className = "row" + (r.done ? " done" : "");
+        row.dataset.index = String(ri);
 
         const dayBtn = document.createElement("button");
         dayBtn.className = "dayBtn";
         dayBtn.type = "button";
         dayBtn.textContent = r.day || "Day";
-        dayBtn.addEventListener("click", ()=> advanceTo(ri));
+        dayBtn.addEventListener("click", (e)=>{
+          e.stopPropagation();
+          const val = prompt("Rename day / time:", r.day);
+          if(val !== null){
+            r.day = val.trim() || r.day;
+            save();
+            render();
+          }
+          setProgress(ri);
+        });
 
         const task = document.createElement("textarea");
         task.className = "task";
@@ -642,6 +931,11 @@
         } else {
           right.appendChild(document.createElement("div"));
         }
+
+        row.addEventListener("click", (e)=>{
+          if(e.target === dayBtn) return;
+          setProgress(ri);
+        });
 
         row.append(dayBtn, task, right);
         list.appendChild(row);
