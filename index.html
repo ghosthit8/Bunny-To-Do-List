@@ -986,15 +986,7 @@
         task.className = "task";
         task.rows = 2;
         task.value = r.task || "";
-        
-        task.addEventListener("focus", ()=>{
-          IS_EDITING = true;
-          if(EDITING_TIMER) clearTimeout(EDITING_TIMER);
-        });
-        task.addEventListener("blur", ()=>{
-          // small delay so taps don't immediately trigger row selection on mobile
-          EDITING_TIMER = setTimeout(()=>{ IS_EDITING = false; }, 250);
-        });task.placeholder = "type something sweet…";
+        task.placeholder = "type something sweet…";
         task.addEventListener("input", ()=>{
           r.task = task.value;
           save();
@@ -1010,11 +1002,10 @@
         right.className = "usCell";
         right.appendChild(document.createElement("div"));
 
-        row.addEventListener("pointerdown", (e)=>{
-          // ✅ Row tap selects progress, but never steal focus from editing
-          if(IS_EDITING) return;
+        row.addEventListener("click", (e)=>{
+          // clicking inside the textarea should ONLY focus/type (no rerender)
           if(e.target === dayBtn) return;
-          if(e.target.closest && e.target.closest("textarea")) return;
+          if(e.target === task || e.target.closest("textarea")) return;
           setProgress(ri);
         });
 
@@ -1064,9 +1055,23 @@
       render();
     });
 
-    window.addEventListener("resize", ()=>render());
+    // ✅ Mobile keyboard fix:
+    // On mobile, opening the keyboard triggers a window "resize".
+    // If we call render() during that, the textarea gets rebuilt and loses focus → keyboard closes.
+    let __renderResizeT = null;
+    function __safeRenderOnResize(){
+      const ae = document.activeElement;
+      if(ae && ae.classList && ae.classList.contains("task")) return; // don't re-render while typing
+      clearTimeout(__renderResizeT);
+      __renderResizeT = setTimeout(()=>render(), 180);
+    }
+    window.addEventListener("resize", __safeRenderOnResize);
+    // Some mobile browsers fire resize on visualViewport instead of window
+    if(window.visualViewport){
+      window.visualViewport.addEventListener("resize", __safeRenderOnResize);
+    }
 
-    normalize();
+normalize();
     save();
     render();
   </script>
